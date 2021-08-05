@@ -1,0 +1,86 @@
+{
+    "name": "Auto Pause and Resume",
+    "properties": {
+        "description": "Automatically pause and resume the Dedicated SQL Pool based on the schedules defined in the triggers.",
+        "activities": [
+            {
+                "name": "Determine State",
+                "description": "Check whether to Pause or Resume the Dedicated SQL Pool",
+                "type": "IfCondition",
+                "dependsOn": [],
+                "userProperties": [],
+                "typeProperties": {
+                    "expression": {
+                        "value": "@pipeline().parameters.Pause",
+                        "type": "Expression"
+                    },
+                    "ifFalseActivities": [
+                        {
+                            "name": "Resume",
+                            "description": "REST API call to resume the Dedicated SQL Pool",
+                            "type": "WebActivity",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "url": "https://management.azure.com/subscriptions/REPLACE_SUBSCRIPTION/resourceGroups/REPLACE_RESOURCE_GROUP/providers/Microsoft.Synapse/workspaces/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/sqlPools/DataWarehouse/resume?api-version=2021-05-01",
+                                "connectVia": {
+                                    "referenceName": "AutoResolveIntegrationRuntime",
+                                    "type": "IntegrationRuntimeReference"
+                                },
+                                "method": "POST",
+                                "body": "{}",
+                                "authentication": {
+                                    "type": "MSI",
+                                    "resource": "https://management.azure.com/"
+                                }
+                            }
+                        }
+                    ],
+                    "ifTrueActivities": [
+                        {
+                            "name": "Pause",
+                            "description": "REST API call to pause the Dedicated SQL Pool",
+                            "type": "WebActivity",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "url": "https://management.azure.com/subscriptions/REPLACE_SUBSCRIPTION/resourceGroups/REPLACE_RESOURCE_GROUP/providers/Microsoft.Synapse/workspaces/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/sqlPools/DataWarehouse/pause?api-version=2021-05-01",
+                                "connectVia": {
+                                    "referenceName": "AutoResolveIntegrationRuntime",
+                                    "type": "IntegrationRuntimeReference"
+                                },
+                                "method": "POST",
+                                "body": "{}",
+                                "authentication": {
+                                    "type": "MSI",
+                                    "resource": "https://management.azure.com/"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "parameters": {
+            "Pause": {
+                "type": "bool"
+            }
+        },
+        "annotations": []
+    },
+    "type": "Microsoft.Synapse/workspaces/pipelines"
+}
