@@ -11,13 +11,14 @@
 
 # How to run
 
-- These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-      ```
-      git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-      cd Azure-Synapse-Analytics-PoC
-      nano environment.tf
-      terraform init
-      terraform plan
-      terraform apply
-      ./configure.sh
-      ```
+These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
+```
+git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
+cd Azure-Synapse-Analytics-PoC  
+nano environment.tf  
+terraform init  
+terraform plan  
+terraform apply  
+./configure.sh 
+```
+      
