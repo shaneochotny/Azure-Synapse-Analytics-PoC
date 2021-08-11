@@ -75,7 +75,7 @@ variable "synapse_sql_administrator_login_password" {
 variable "synapse_azure_ad_admin_upn" {
   type        = string
   default     = ""
-  description = "UserPrincipcalName (UPN) for the Azure AD administrator of Synapse. This can also be a group, but only one value can be specified."
+  description = "UserPrincipcalName (UPN) for the Azure AD administrator of Synapse. This can also be a group, but only one value can be specified. (i.e. shane@microsoft.com)"
 }
 
 variable "enable_private_endpoints" {
