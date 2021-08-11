@@ -46,7 +46,7 @@ terraform apply
 - Create a pipeline to auto pause/resume the Dedicated SQL Pool
 - Feature flag to enable/disable Private Endpoints
 - Serverless SQL Demo Data Database
-- Proper service and user permissions for Azure Synapse Analytics Workspace and Azure DAta Lake Storage Gen2
+- Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 
 # To Do
 - Example script for configuring Row Level Security
