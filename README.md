@@ -20,7 +20,7 @@ nano environment.tf
 terraform init  
 terraform plan  
 terraform apply  
-./configure.sh 
+bash configure.sh 
 ```
 
 - There are a few variables in <b>environment.tf</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs updated to deploy.
