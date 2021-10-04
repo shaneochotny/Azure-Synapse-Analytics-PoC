@@ -16,7 +16,7 @@
       @Azure:~$ terraform init
       @Azure:~$ terraform plan
       @Azure:~$ terraform apply
-      @Azure:~$ ./configure.sh
+      @Azure:~$ bash configure.sh
 
     Resources:
 
@@ -33,8 +33,25 @@
 
 ************************************************************************************************************************************************/
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 2.79.0"
+    }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.5.0"
+    }
+  }
+}
+
 provider "azurerm" {
   features {}
+}
+
+provider "azuread" {
+  use_msi = false
 }
 
 data "azurerm_client_config" "current" {}
@@ -288,8 +305,7 @@ resource "azurerm_monitor_diagnostic_setting" "adlsdiagnostics" {
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account_network_rules
 resource "azurerm_storage_account_network_rules" "firewall" {
   count                = var.enable_private_endpoints == true ? 1 : 0
-  resource_group_name  = var.resource_group_name
-  storage_account_name = azurerm_storage_account.datalake.name
+  storage_account_id   = azurerm_storage_account.datalake.id
   default_action       = "Deny"
   bypass               = [ "None" ]
 

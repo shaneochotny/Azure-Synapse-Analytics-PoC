@@ -20,7 +20,7 @@ nano environment.tf
 terraform init  
 terraform plan  
 terraform apply  
-./configure.sh 
+bash configure.sh 
 ```
 
 - There are a few variables in <b>environment.tf</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs updated to deploy.
@@ -43,8 +43,12 @@ terraform apply
 
 # What's Configured
 - Enable Result Set Caching
-- Create a pipeline to auto pause/resume the Dedicated SQL Pool
+- Create a pipeline to auto pause/resume the Dedicated SQL Pool
 - Feature flag to enable/disable Private Endpoints
 - Serverless SQL Demo Data Database
-- Proper service and user permissions for Azure Synapse Analytics Workspace and Azure DAta Lake Storage Gen2
+- Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 
+# To Do
+- Example script for configuring Row Level Security
+- Example script for configuring Dynamic Data Masking
+- Data ingestion best practices

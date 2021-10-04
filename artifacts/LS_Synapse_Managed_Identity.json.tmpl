@@ -1,0 +1,25 @@
+{
+    "name": "LS_Synapse_Managed_Identity",
+    "properties": {
+        "parameters": {
+            "ServerName": {
+                "type": "string",
+                "defaultValue": "REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME.sql.azuresynapse.net"
+            },
+            "DatabaseName": {
+                "type": "string",
+                "defaultValue": "DataWarehouse"
+            }
+        },
+        "annotations": [],
+        "type": "AzureSqlDW",
+        "typeProperties": {
+            "connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=@{linkedService().ServerName};Initial Catalog=@{linkedService().DatabaseName}"
+        },
+        "connectVia": {
+            "referenceName": "AutoResolveIntegrationRuntime",
+            "type": "IntegrationRuntimeReference"
+        },
+        "description": "This is a parameterized Linked Service using Managed Identity authentication for Integration Pipelines. It allows us to interchange Serverless SQL and multiple Dedicated SQL pools."
+    }
+}

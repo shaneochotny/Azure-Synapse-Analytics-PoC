@@ -9,7 +9,7 @@
 #   @Azure:~$ terraform init
 #   @Azure:~$ terraform plan
 #   @Azure:~$ terraform apply
-#   @Azure:~$ ./configure.sh
+#   @Azure:~$ bash configure.sh
 #
 
 # Make sure this configuration script hasn't been executed already
@@ -20,11 +20,13 @@ fi
 
 # Make sure we have all the required artifacts
 declare -A artifactFiles
-artifactFiles[2]="artifacts/Enable_Result_Set_Cache_DDL.json.tmpl"
-artifactFiles[4]="artifacts/triggerPause.json.tmpl"
-artifactFiles[5]="artifacts/triggerResume.json.tmpl"
-artifactFiles[6]="artifacts/Auto_Pause_and_Resume.json.tmpl"
-artifactFiles[10]="artifacts/Demo_Data_Serverless_DDL.sql"
+artifactFiles[1]="artifacts/Enable_Result_Set_Cache_DDL.json.tmpl"
+artifactFiles[2]="artifacts/triggerPause.json.tmpl"
+artifactFiles[3]="artifacts/triggerResume.json.tmpl"
+artifactFiles[4]="artifacts/Auto_Pause_and_Resume.json.tmpl"
+artifactFiles[5]="artifacts/Demo_Data_Serverless_DDL.sql"
+artifactFiles[6]="artifacts/logging.AutoIngestion_DDL.sql"
+artifactFiles[7]="artifacts/logging.DataProfile_DDL.sql"
 for file in "${artifactFiles[@]}"; do
     if ! [ -f "$file" ]; then
         echo "ERROR: The required $file file does not exist. Please clone the git repo with the supporting artifacts and then execute this script.";
@@ -78,10 +80,6 @@ sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAn
 
 echo "Creating the auto pause/resume pipeline..."
 
-# Create the Pause/Resume triggers in the Synapse Analytics Workspace
-az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Pause --file @artifacts/triggerPause.json.tmpl
-az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Resume --file @artifacts/triggerResume.json.tmpl
-
 # Copy the Auto_Pause_and_Resume Pipeline template and update the variables
 cp artifacts/Auto_Pause_and_Resume.json.tmpl artifacts/Auto_Pause_and_Resume.json 2>&1
 sed -i "s/REPLACE_SUBSCRIPTION/${azureSubscriptionID}/g" artifacts/Auto_Pause_and_Resume.json
@@ -90,6 +88,20 @@ sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceNa
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Auto Pause and Resume" --file @artifacts/Auto_Pause_and_Resume.json
+
+# Create the Pause/Resume triggers in the Synapse Analytics Workspace
+az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Pause --file @artifacts/triggerPause.json.tmpl
+az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Resume --file @artifacts/triggerResume.json.tmpl
+
+# Create the logging schema and tables for the Auto Ingestion pipeline
+sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -Q "CREATE SCHEMA logging;"
+sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.AutoIngestion_DDL.sql
+sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.DataProfile_DDL.sql
+
+# Create the Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
+cp artifacts/LS_Synapse_Managed_Identity.json.tmpl artifacts/LS_Synapse_Managed_Identity.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/LS_Synapse_Managed_Identity.json
+az synapse linked-service set --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @artifacts/LS_Synapse_Managed_Identity.json
 
 echo "Creating the Demo Data database using Synapse Serverless SQL..."
 
@@ -101,7 +113,6 @@ sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAn
 
 # Remove the "Allow Azure Services..." from the firewall rules on Azure Synapse Analytics. That was needed temporarily to apply these settings.
 echo "Updating firewall rules..."
-
 az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
 
 echo "Deployment complete!"
