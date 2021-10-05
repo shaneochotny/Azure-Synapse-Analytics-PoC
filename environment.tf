@@ -145,6 +145,14 @@ output "synapse_analytics_workspace_resource_group" {
   value = var.resource_group_name
 }
 
+output "datalake_name" {
+  value = "pocsynapseanalytics${random_string.suffix.id}"
+}
+
+output "datalake_key" {
+  value = azurerm_storage_account.datalake.primary_access_key
+}
+
 /************************************************************************************************************************************************
 
   Dependancy Lookups

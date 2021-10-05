@@ -65,6 +65,8 @@ synapseAnalyticsWorkspaceResourceGroup=$(terraform output -raw synapse_analytics
 synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
 synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
 synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
+datalakeName=$(terraform output -raw datalake_name 2>&1)
+datalakeKey=$(terraform output -raw datalake_key 2>&1)
 if echo "$synapseAnalyticsWorkspaceName" | grep -q "The output variable requested could not be found"; then
     echo "ERROR: It doesn't look like a 'terraform apply' was performed. This script needs to be executed after the Terraform deployment.";
     exit 1;
@@ -72,6 +74,7 @@ fi
 echo "Synapse Analytics Workspace Resource Group: ${synapseAnalyticsWorkspaceResourceGroup}"
 echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
+echo "Data Lake Name: ${datalakeName}"
 
 # Enable Result Set Cache
 echo "Enabling Result Set Caching..."
@@ -97,10 +100,21 @@ sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAn
 sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.AutoIngestion_DDL.sql
 sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.DataProfile_DDL.sql
 
+echo "Creating the parquet auto ingestion pipeline..."
+
 # Create the Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/LS_Synapse_Managed_Identity.json.tmpl artifacts/LS_Synapse_Managed_Identity.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/LS_Synapse_Managed_Identity.json
 az synapse linked-service set --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @artifacts/LS_Synapse_Managed_Identity.json
+
+# Copy the Parquet Auto Ingestion Pipeline template and update the variables
+cp artifacts/Parquet_Auto_Ingestion.json.tmpl artifacts/Parquet_Auto_Ingestion.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Parquet_Auto_Ingestion.json
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingestion.json
+sed -i "s/REPLACE_DATALAKE_KEY/${datalakeKey}/g" artifacts/Parquet_Auto_Ingestion.json
+
+# Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json
 
 echo "Creating the Demo Data database using Synapse Serverless SQL..."
 
