@@ -20,13 +20,12 @@ fi
 
 # Make sure we have all the required artifacts
 declare -A artifactFiles
-artifactFiles[1]="artifacts/Enable_Result_Set_Cache_DDL.json.tmpl"
-artifactFiles[2]="artifacts/triggerPause.json.tmpl"
-artifactFiles[3]="artifacts/triggerResume.json.tmpl"
-artifactFiles[4]="artifacts/Auto_Pause_and_Resume.json.tmpl"
-artifactFiles[5]="artifacts/Demo_Data_Serverless_DDL.sql"
-artifactFiles[6]="artifacts/logging.AutoIngestion_DDL.sql"
-artifactFiles[7]="artifacts/logging.DataProfile_DDL.sql"
+artifactFiles[1]="artifacts/triggerPause.json.tmpl"
+artifactFiles[2]="artifacts/triggerResume.json.tmpl"
+artifactFiles[3]="artifacts/Auto_Pause_and_Resume.json.tmpl"
+artifactFiles[4]="artifacts/Demo_Data_Serverless_DDL.sql"
+artifactFiles[5]="artifacts/logging.AutoIngestion_DDL.sql"
+artifactFiles[6]="artifacts/logging.DataProfile_DDL.sql"
 for file in "${artifactFiles[@]}"; do
     if ! [ -f "$file" ]; then
         echo "ERROR: The required $file file does not exist. Please clone the git repo with the supporting artifacts and then execute this script.";
