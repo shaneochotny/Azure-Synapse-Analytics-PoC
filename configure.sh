@@ -26,6 +26,8 @@ artifactFiles[3]="artifacts/Auto_Pause_and_Resume.json.tmpl"
 artifactFiles[4]="artifacts/Demo_Data_Serverless_DDL.sql"
 artifactFiles[5]="artifacts/logging.AutoIngestion_DDL.sql"
 artifactFiles[6]="artifacts/logging.DataProfile_DDL.sql"
+artifactFiles[7]="artifacts/LS_Synapse_Managed_Identity.json.tmpl"
+artifactFiles[8]="artifacts/Parquet_Auto_Ingestion.json.tmpl"
 for file in "${artifactFiles[@]}"; do
     if ! [ -f "$file" ]; then
         echo "ERROR: The required $file file does not exist. Please clone the git repo with the supporting artifacts and then execute this script.";
