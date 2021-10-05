@@ -104,16 +104,21 @@ sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAn
 
 echo "Creating the parquet auto ingestion pipeline..."
 
-# Create the Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
+# Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/LS_Synapse_Managed_Identity.json.tmpl artifacts/LS_Synapse_Managed_Identity.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/LS_Synapse_Managed_Identity.json
-az synapse linked-service set --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @artifacts/LS_Synapse_Managed_Identity.json
+az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @artifacts/LS_Synapse_Managed_Identity.json
+
+# Create the DS_Synapse_Managed_Identity Dataset. This is primarily used for the Auto Ingestion pipeline.
+cp artifacts/DS_Synapse_Managed_Identity.json.tmpl artifacts/DS_Synapse_Managed_Identity.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/DS_Synapse_Managed_Identity.json
+az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @artifacts/DS_Synapse_Managed_Identity.json
 
 # Copy the Parquet Auto Ingestion Pipeline template and update the variables
 cp artifacts/Parquet_Auto_Ingestion.json.tmpl artifacts/Parquet_Auto_Ingestion.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Parquet_Auto_Ingestion.json
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingestion.json
-sed -i "s/REPLACE_DATALAKE_KEY/${datalakeKey}/g" artifacts/Parquet_Auto_Ingestion.json
+sed -i "s#REPLACE_DATALAKE_KEY#${datalakeKey}#g" artifacts/Parquet_Auto_Ingestion.json
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json

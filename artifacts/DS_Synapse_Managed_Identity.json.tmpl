@@ -1,0 +1,32 @@
+{
+	"name": "DS_Synapse_Managed_Identity",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Synapse_Managed_Identity",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"ServerName": {
+					"value": "@dataset().ServerName",
+					"type": "Expression"
+				},
+				"DatabaseName": {
+					"value": "@dataset().DatabaseName",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"ServerName": {
+				"type": "string",
+				"defaultValue": "REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME.sql.azuresynapse.net"
+			},
+			"DatabaseName": {
+				"type": "string",
+				"defaultValue": "DataWarehouse"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": []
+	}
+}
