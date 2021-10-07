@@ -263,6 +263,8 @@ resource "azurerm_storage_account" "datalake" {
 resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-config" {
   name               = "config"
   storage_account_id = azurerm_storage_account.datalake.id
+  
+  depends_on = [ azurerm_storage_account.datalake ]
 }
 
 // Storage Container for any data to ingest or query on-demand
@@ -271,6 +273,8 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-config" {
 resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-data" {
   name               = "data"
   storage_account_id = azurerm_storage_account.datalake.id
+  
+  depends_on = [ azurerm_storage_account.datalake ]
 }
 
 // Azure Data Lake Storage Gen2 Permissions: Give the synapse_azure_ad_admin_upn user/group permissions to Azure Data Lake Storage Gen2
