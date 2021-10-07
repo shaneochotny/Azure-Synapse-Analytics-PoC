@@ -257,26 +257,6 @@ resource "azurerm_storage_account" "datalake" {
   depends_on = [ azurerm_resource_group.resource_group ]
 }
 
-// Storage Container for the Synapse Workspace config data
-//   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
-//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_data_lake_gen2_filesystem
-resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-config" {
-  name               = "config"
-  storage_account_id = azurerm_storage_account.datalake.id
-  
-  depends_on = [ azurerm_storage_account.datalake ]
-}
-
-// Storage Container for any data to ingest or query on-demand
-//   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
-//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_data_lake_gen2_filesystem
-resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-data" {
-  name               = "data"
-  storage_account_id = azurerm_storage_account.datalake.id
-  
-  depends_on = [ azurerm_storage_account.datalake ]
-}
-
 // Azure Data Lake Storage Gen2 Permissions: Give the synapse_azure_ad_admin_upn user/group permissions to Azure Data Lake Storage Gen2
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment
@@ -286,6 +266,26 @@ resource "azurerm_role_assignment" "adls-user-permissions" {
   principal_id         = data.azuread_user.synapse_azure_ad_admin_object_id.id
 
   depends_on = [ azurerm_storage_account.datalake ]
+}
+
+// Storage Container for the Synapse Workspace config data
+//   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_data_lake_gen2_filesystem
+resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-config" {
+  name               = "config"
+  storage_account_id = azurerm_storage_account.datalake.id
+  
+  depends_on = [ azurerm_storage_account.datalake, azurerm_role_assignment.adls-user-permissions ]
+}
+
+// Storage Container for any data to ingest or query on-demand
+//   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_data_lake_gen2_filesystem
+resource "azurerm_storage_data_lake_gen2_filesystem" "datalake-data" {
+  name               = "data"
+  storage_account_id = azurerm_storage_account.datalake.id
+  
+  depends_on = [ azurerm_storage_account.datalake, azurerm_role_assignment.adls-user-permissions ]
 }
 
 // Azure Data Lake Storage Gen2 Diagnostic Logging
@@ -311,6 +311,8 @@ resource "azurerm_monitor_diagnostic_setting" "adlsdiagnostics" {
   metric {
     category = "Transaction"
   }
+
+  depends_on = [ azurerm_storage_account.datalake, azurerm_log_analytics_workspace.loganalytics ]
 }
 
 // Storage Firewall: Give the Synapse Analytics Workspace network access to Azure Data Lake Storage Gen2 if Private Endpoints are enabled
@@ -468,6 +470,8 @@ resource "azurerm_monitor_diagnostic_setting" "synapse-workspace-diagnostics" {
   log {
     category = "IntegrationTriggerRuns"
   }
+
+  depends_on = [ azurerm_log_analytics_workspace.loganalytics, azurerm_synapse_workspace.synapsews ]
 }
 
 // Synapse Dedicated SQL Pool: Create the initial SQL Pool for the Data Warehouse
@@ -520,6 +524,8 @@ resource "azurerm_monitor_diagnostic_setting" "synapse-dedicated-sql-pool-diagno
   log {
     category = "Waits"
   }
+
+  depends_on = [ azurerm_log_analytics_workspace.loganalytics, azurerm_synapse_sql_pool.synapsesqlpool ]
 }
 
 // Create a Private Endpoint for SQL Dedicated Pools
