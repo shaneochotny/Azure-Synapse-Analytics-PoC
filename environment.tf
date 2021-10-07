@@ -146,7 +146,7 @@ output "synapse_analytics_workspace_resource_group" {
 }
 
 output "datalake_name" {
-  value = "pocsynapseanalytics${random_string.suffix.id}"
+  value = "pocsynapseadls${random_string.suffix.id}"
 }
 
 output "datalake_key" {
