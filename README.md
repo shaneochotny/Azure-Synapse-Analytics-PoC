@@ -2,7 +2,7 @@
 
 ![alt tag](https://raw.githubusercontent.com/shaneochotny/Azure-Synapse-Analytics-PoC\/main/Images/Synapse-Analytics-PoC-Architecture.gif)
 
-# Overview
+# Description
 
 Create a Synapse Analytics environment based on best practices to achieve a successful proof of concept. While settings can be adjusted, 
 the major deployment differences are based on whether or not you used Private Endpoints for connectivity. If you do not already use 
@@ -16,15 +16,15 @@ These files should be executed from the Azure Cloud Shell at https://shell.azure
 ```
 git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
 cd Azure-Synapse-Analytics-PoC  
-nano environment.tf  
+nano terraform.tfvars 
 terraform init  
 terraform plan  
 terraform apply  
 bash configure.sh 
 ```
 
-- There are a few variables in <b>environment.tf</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs updated to deploy.
-- <b>environment.tf</b> is the Terraform template which deploys the environment. <b>configure.sh</b> performs post deployment configuration that cannot be done with Terraform.
+- There are a few variables in <b>terraform.tfvars</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs updated to deploy.
+- <b>main.tf</b> is the Terraform template which deploys the environment. <b>configure.sh</b> performs post deployment configuration that cannot be done with Terraform.
 
 
 # What's Deployed
