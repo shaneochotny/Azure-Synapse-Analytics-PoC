@@ -13,5 +13,5 @@ synapse_sql_administrator_login          = "sqladminuser"                 // Nat
 synapse_sql_administrator_login_password = "Pass@word123"                 // Password for the native SQL admin account above.
 synapse_azure_ad_admin_upn               = ""                             // UserPrincipcalName (UPN) for the Azure AD administrator of Synapse. This can also be a group, but only one value can be specified. (i.e. shane@microsoft.com)
 enable_private_endpoints                 = false                          // If true, create Private Endpoints for Synapse Analytics. This assumes you have other Private Endpoint requirements configured and in place such as virtual networks, VPN/Express Route, and private DNS forwarding.
-private_endpoint_virtual_network         = ""                             // Name of the Virtual Network where you want to create the Private Endpoints.
-private_endpoint_virtual_network_subnet  = ""                             // Name of the Subnet within the Virtual Network where you want to create the Private Endpoints.
+private_endpoint_virtual_network         = ""                             // Name of the Virtual Network where you want to create the Private Endpoints. (i.e. vnet-data-platform)
+private_endpoint_virtual_network_subnet  = ""                             // Name of the Subnet within the Virtual Network where you want to create the Private Endpoints. (i.e. private-endpoint-subnet)
