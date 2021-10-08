@@ -97,7 +97,7 @@ az synapse trigger create --only-show-errors -o none --workspace-name ${synapseA
 az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Resume --file @artifacts/triggerResume.json.tmpl
 
 # Create the logging schema and tables for the Auto Ingestion pipeline
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql
+sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
 
 echo "Creating the parquet auto ingestion pipeline..."
 
