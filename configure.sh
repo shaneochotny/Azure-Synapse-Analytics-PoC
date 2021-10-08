@@ -24,8 +24,6 @@ artifactFiles[1]="artifacts/triggerPause.json.tmpl"
 artifactFiles[2]="artifacts/triggerResume.json.tmpl"
 artifactFiles[3]="artifacts/Auto_Pause_and_Resume.json.tmpl"
 artifactFiles[4]="artifacts/Demo_Data_Serverless_DDL.sql"
-artifactFiles[5]="artifacts/logging.AutoIngestion_DDL.sql"
-artifactFiles[6]="artifacts/logging.DataProfile_DDL.sql"
 artifactFiles[7]="artifacts/LS_Synapse_Managed_Identity.json.tmpl"
 artifactFiles[8]="artifacts/DS_Synapse_Managed_Identity.json.tmpl"
 artifactFiles[9]="artifacts/Parquet_Auto_Ingestion.json.tmpl"
@@ -99,9 +97,7 @@ az synapse trigger create --only-show-errors -o none --workspace-name ${synapseA
 az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Resume --file @artifacts/triggerResume.json.tmpl
 
 # Create the logging schema and tables for the Auto Ingestion pipeline
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -Q "CREATE SCHEMA logging;"
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.AutoIngestion_DDL.sql
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/logging.DataProfile_DDL.sql
+sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql
 
 echo "Creating the parquet auto ingestion pipeline..."
 
