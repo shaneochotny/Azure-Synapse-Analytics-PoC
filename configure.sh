@@ -68,6 +68,7 @@ synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login
 synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
 datalakeName=$(terraform output -raw datalake_name 2>&1)
 datalakeKey=$(terraform output -raw datalake_key 2>&1)
+privateEndpointsEnabled=$(terraform output -raw private_endpoints_enabled 2>&1)
 if echo "$synapseAnalyticsWorkspaceName" | grep -q "The output variable requested could not be found"; then
     echo "ERROR: It doesn't look like a 'terraform apply' was performed. This script needs to be executed after the Terraform deployment.";
     exit 1;
@@ -76,6 +77,11 @@ echo "Synapse Analytics Workspace Resource Group: ${synapseAnalyticsWorkspaceRes
 echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
 echo "Data Lake Name: ${datalakeName}"
+
+# Temporarily disable the firewalls if they're enabled so we can copy files and perform additional configuration
+if echo "$privateEndpointsEnabled" | grep -q "true"; then
+    az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Allow --only-show-errors -o none
+fi
 
 # Enable Result Set Cache
 echo "Enabling Result Set Caching..."
@@ -144,9 +150,12 @@ sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAn
 # Create the Views over the external data
 sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
-# Remove the "Allow Azure Services..." from the firewall rules on Azure Synapse Analytics. That was needed temporarily to apply these settings.
-echo "Updating firewall rules..."
-az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
+# Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
+if echo "$privateEndpointsEnabled" | grep -q "true"; then
+    echo "Restoring firewall rules..."
+    az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Deny --only-show-errors -o none
+    az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
+fi
 
 echo "Deployment complete!"
 touch configure.complete

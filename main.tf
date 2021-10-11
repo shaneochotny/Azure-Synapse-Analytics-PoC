@@ -88,6 +88,10 @@ output "datalake_key" {
   sensitive = true
 }
 
+output "private_endpoints_enabled" {
+  value = var.enable_private_endpoints
+}
+
 /************************************************************************************************************************************************
 
   Dependancy Lookups
@@ -306,7 +310,7 @@ resource "azurerm_storage_account_network_rules" "firewall" {
   count                = var.enable_private_endpoints == true ? 1 : 0
   storage_account_id   = azurerm_storage_account.datalake.id
   default_action       = "Deny"
-  bypass               = [ "None" ]
+  bypass               = [ "AzureServices" ]
 
   private_link_access { 
     endpoint_resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourcegroups/${var.resource_group_name}/providers/Microsoft.Synapse/workspaces/*"
