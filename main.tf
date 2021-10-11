@@ -249,21 +249,6 @@ resource "azurerm_monitor_diagnostic_setting" "adlsdiagnostics" {
   depends_on = [ azurerm_storage_account.datalake, azurerm_log_analytics_workspace.loganalytics ]
 }
 
-// Storage Firewall: Give the Synapse Analytics Workspace network access to Azure Data Lake Storage Gen2 if Private Endpoints are enabled
-//   Azure: https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal#grant-access-from-azure-resource-instances-preview
-//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account_network_rules
-resource "azurerm_storage_account_network_rules" "firewall" {
-  count                = var.enable_private_endpoints == true ? 1 : 0
-  storage_account_id   = azurerm_storage_account.datalake.id
-  default_action       = "Deny"
-  bypass               = [ "None" ]
-
-  private_link_access { 
-    endpoint_resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourcegroups/${var.resource_group_name}/providers/Microsoft.Synapse/workspaces/*"
-    endpoint_tenant_id   = data.azurerm_client_config.current.tenant_id
- }
-}
-
 // Create a Private Endpoint for Blob
 //   Azure: https://docs.microsoft.com/en-us/azure/storage/common/storage-private-endpoints
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint
@@ -285,6 +270,8 @@ resource "azurerm_private_endpoint" "adlspe-blob" {
     subresource_names              = [ "blob" ]
     is_manual_connection           = false
   }
+
+  depends_on = [ azurerm_role_assignment.adls-user-permissions ]
 }
 
 // Create a Private Endpoint for DFS
@@ -308,6 +295,25 @@ resource "azurerm_private_endpoint" "adlspe-dfs" {
     subresource_names              = [ "dfs" ]
     is_manual_connection           = false
   }
+
+  depends_on = [ azurerm_role_assignment.adls-user-permissions ]
+}
+
+// Storage Firewall: Give the Synapse Analytics Workspace network access to Azure Data Lake Storage Gen2 if Private Endpoints are enabled
+//   Azure: https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal#grant-access-from-azure-resource-instances-preview
+//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account_network_rules
+resource "azurerm_storage_account_network_rules" "firewall" {
+  count                = var.enable_private_endpoints == true ? 1 : 0
+  storage_account_id   = azurerm_storage_account.datalake.id
+  default_action       = "Deny"
+  bypass               = [ "None" ]
+
+  private_link_access { 
+    endpoint_resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourcegroups/${var.resource_group_name}/providers/Microsoft.Synapse/workspaces/*"
+    endpoint_tenant_id   = data.azurerm_client_config.current.tenant_id
+ }
+
+  depends_on = [ azurerm_private_endpoint.adlspe-blob, azurerm_private_endpoint.adlspe-dfs ]
 }
 
 /************************************************************************************************************************************************
