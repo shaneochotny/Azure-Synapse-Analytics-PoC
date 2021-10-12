@@ -85,7 +85,7 @@ echo "Data Lake Name: ${datalakeName}"
 # If Private Endpoints are enabled, temporarily disable the firewalls so we can copy files and perform additional configuration
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
     az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Allow --only-show-errors -o none
-    az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none --yes
+    az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none
 fi
 
 # Enable Result Set Cache
