@@ -365,14 +365,14 @@ resource "azurerm_role_assignment" "adls-synapse-managed-identity" {
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/synapse_firewall_rule
 resource "azurerm_synapse_firewall_rule" "synapse-workspace-firewall-allow-azure" {
-  //count                = var.enable_private_endpoints == true ? 0 : 1
+  count                = var.enable_private_endpoints == true ? 0 : 1
   name                 = "AllowAllWindowsAzureIps"
   synapse_workspace_id = azurerm_synapse_workspace.synapsews.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "0.0.0.0"
 }
 
-// Synapse Workspace Firewall: Allow authenticated accses from anywhere if Private Endpoints are disabled
+// Synapse Workspace Firewall: Allow authenticated access from anywhere if Private Endpoints are disabled
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/synapse_firewall_rule
 resource "azurerm_synapse_firewall_rule" "synapse-workspace-firewall-allow-all" {
