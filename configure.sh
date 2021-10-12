@@ -20,13 +20,17 @@ fi
 
 # Make sure we have all the required artifacts
 declare -A artifactFiles
-artifactFiles[1]="artifacts/triggerPause.json.tmpl"
-artifactFiles[2]="artifacts/triggerResume.json.tmpl"
-artifactFiles[3]="artifacts/Auto_Pause_and_Resume.json.tmpl"
-artifactFiles[4]="artifacts/Demo_Data_Serverless_DDL.sql"
+artifactFiles[1]="artifacts/Auto_Ingestion_Logging_DDL.sql"
+artifactFiles[2]="artifacts/Auto_Pause_and_Resume.json.tmpl"
+artifactFiles[3]="artifacts/Create_Resource_Class_Logins.sql.tmpl"
+artifactFiles[4]="artifacts/Create_Resource_Class_Users.sql"
+artifactFiles[5]="artifacts/Demo_Data_Serverless_DDL.sql"
+artifactFiles[6]="artifacts/DS_Synapse_Managed_Identity.json.tmpl"
 artifactFiles[7]="artifacts/LS_Synapse_Managed_Identity.json.tmpl"
-artifactFiles[8]="artifacts/DS_Synapse_Managed_Identity.json.tmpl"
+artifactFiles[8]="artifacts/Parquet_Auto_Ingestion_Metadata.csv"
 artifactFiles[9]="artifacts/Parquet_Auto_Ingestion.json.tmpl"
+artifactFiles[10]="artifacts/triggerPause.json.tmpl"
+artifactFiles[11]="artifacts/triggerResume.json.tmpl"
 for file in "${artifactFiles[@]}"; do
     if ! [ -f "$file" ]; then
         echo "ERROR: The required $file file does not exist. Please clone the git repo with the supporting artifacts and then execute this script.";
@@ -55,10 +59,10 @@ fi
 
 # Get environment details
 azureSubscriptionName=$(az account show --query "name" --output tsv 2>&1)
-echo "Azure Subscription: ${azureSubscriptionName}"
 azureSubscriptionID=$(az account show --query "id" --output tsv 2>&1)
-echo "Azure Subscription ID: ${azureSubscriptionID}"
 azureUsername=$(az account show --query "user.name" --output tsv 2>&1)
+echo "Azure Subscription: ${azureSubscriptionName}"
+echo "Azure Subscription ID: ${azureSubscriptionID}"
 echo "Azure AD Username: ${azureUsername}"
 
 # Get the output variables from Terraform
@@ -78,9 +82,10 @@ echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
 echo "Data Lake Name: ${datalakeName}"
 
-# Temporarily disable the firewalls if they're enabled so we can copy files and perform additional configuration
+# If Private Endpoints are enabled, temporarily disable the firewalls so we can copy files and perform additional configuration
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
     az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Allow --only-show-errors -o none
+    az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none --yes
 fi
 
 # Enable Result Set Cache
@@ -102,10 +107,10 @@ az synapse pipeline create --only-show-errors -o none --workspace-name ${synapse
 az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Pause --file @artifacts/triggerPause.json.tmpl
 az synapse trigger create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name Resume --file @artifacts/triggerResume.json.tmpl
 
+echo "Creating the parquet auto ingestion pipeline..."
+
 # Create the logging schema and tables for the Auto Ingestion pipeline
 sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
-
-echo "Creating the parquet auto ingestion pipeline..."
 
 # Create the Resource Class Logins
 cp artifacts/Create_Resource_Class_Logins.sql.tmpl artifacts/Create_Resource_Class_Logins.sql 2>&1
