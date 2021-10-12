@@ -14,13 +14,13 @@ depandancies than what can be configured here.
 
 These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
 ```
-<b>@Azure:~$</b> git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
-<b>@Azure:~$</b> cd Azure-Synapse-Analytics-PoC  
-<b>@Azure:~$</b> nano terraform.tfvars 
-<b>@Azure:~$</b> terraform init  
-<b>@Azure:~$</b> terraform plan  
-<b>@Azure:~$</b> terraform apply  
-<b>@Azure:~$</b> bash configure.sh 
+@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
+@Azure:~$ cd Azure-Synapse-Analytics-PoC  
+@Azure:~$ nano terraform.tfvars 
+@Azure:~$ terraform init  
+@Azure:~$ terraform plan  
+@Azure:~$ terraform apply  
+@Azure:~$ bash configure.sh 
 ```
 
 - There are a few variables in <b>terraform.tfvars</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs to be updated to deploy.
