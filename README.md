@@ -16,7 +16,7 @@ These files should be executed from the Azure Cloud Shell at https://shell.azure
 ```
 @Azure:~$ git clone --branch add-test-data https://github.com/tonio-lora/Azure-Synapse-Analytics-PoC  
 @Azure:~$ cd Azure-Synapse-Analytics-PoC  
-@Azure:~$ nano terraform.tfvars 
+@Azure:~$ code terraform.tfvars 
 @Azure:~$ bash setup.sh 
 @Azure:~$ bash configure.sh 
 ```
