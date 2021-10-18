@@ -22,7 +22,7 @@ These files should be executed from the Azure Cloud Shell at https://shell.azure
 ```
 
 - There are a few variables in <b>terraform.tfvars</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs to be updated to deploy.
-- <b>main.tf</b> is the Terraform template which deploys the environment. <b>configure.sh</b> performs post deployment configuration that cannot be done with Terraform.
+- <b>setup.sh</b> is the bash script that uses Terraform to deploy the environment. <b>configure.sh</b> performs post deployment configuration that cannot be done with Terraform.
 
 
 # What's Deployed
