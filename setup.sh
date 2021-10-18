@@ -18,7 +18,7 @@ fi
 # Make sure we have all the required artifacts
 terraform init
 terraform plan
-terraform apply
+terraform apply -auto-approve
 
 echo "Setup complete!"
 touch setup.complete
