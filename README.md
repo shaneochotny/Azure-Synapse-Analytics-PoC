@@ -14,12 +14,10 @@ depandancies than what can be configured here.
 
 These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
 ```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
+@Azure:~$ git clone --branch add-test-data https://github.com/tonio-lora/Azure-Synapse-Analytics-PoC  
 @Azure:~$ cd Azure-Synapse-Analytics-PoC  
 @Azure:~$ nano terraform.tfvars 
-@Azure:~$ terraform init  
-@Azure:~$ terraform plan  
-@Azure:~$ terraform apply  
+@Azure:~$ bash setup.sh 
 @Azure:~$ bash configure.sh 
 ```
 
