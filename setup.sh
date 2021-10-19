@@ -4,7 +4,6 @@
 #
 #   @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
 #   @Azure:~$ cd Azure-Synapse-Analytics-PoC
-#   @Azure:~$ nano terraform.tfvars
 #   @Azure:~$ setup.sh
 #   @Azure:~$ bash configure.sh
 #
