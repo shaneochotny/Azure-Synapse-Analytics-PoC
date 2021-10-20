@@ -171,14 +171,14 @@ sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceNa
 #./upload_sql_scripts.ps1
 
 # Update Notebook variables
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
+#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
+#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
 
 # Create Sample Notebooks
-az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\01-load-staging-table" --file @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\02-load-dimension-table" --file @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\03-load-fact-table" --file @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\01-load-staging-table" --file @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
+#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\02-load-dimension-table" --file @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
+#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\03-load-fact-table" --file @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
 
 
 echo "Deployment complete!"
