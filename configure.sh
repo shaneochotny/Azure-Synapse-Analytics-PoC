@@ -167,7 +167,8 @@ echo "Uploading SQL Scipts and Notebook samples..."
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" ./upload_sql_scripts.ps1
 
 # Run PowerShell script to upload Scripts
-./upload_sql_scripts.ps1
+# Run outside this command
+#./upload_sql_scripts.ps1
 
 # Update Notebook variables
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
