@@ -79,7 +79,9 @@ if echo "$synapseAnalyticsWorkspaceName" | grep -q "The output variable requeste
 fi
 echo "Synapse Analytics Workspace Resource Group: ${synapseAnalyticsWorkspaceResourceGroup}"
 echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
+echo "Synapse Analytics Dedicated SQL endpoint: ${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
+echo "Synapse Analytics SQL Admin password: ${synapseAnalyticsSQLAdminPassword}"
 echo "Data Lake Name: ${datalakeName}"
 
 # If Private Endpoints are enabled, temporarily disable the firewalls so we can copy files and perform additional configuration
