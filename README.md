@@ -30,10 +30,12 @@ bash configure.sh
 
 ### Azure Synapse Analytics Workspace
 - DW1000 Dedicated SQL Pool
+- Sample SQL Scripts and Spark Notebooks
+- Metadata driven Data Loader pipeline to quickly onboard parquet files available in the Data Lake  
 
 ### Azure Data Lake Storage Gen2
 - <b>config</b> container for Azure Synapse Analytics Workspace
-- <b>data</b> container for queried/ingested data
+- <b>data</b> container for queried/ingested data including AdventureWorksDW2019 in parquet format
 
 ### Azure Log Analytics
 - Logging and telemetry for Azure Synapse Analytics
@@ -48,6 +50,6 @@ bash configure.sh
 - Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
 
-# To Do
-- Example script for configuring Row Level Security
-- Example script for configuring Dynamic Data Masking
+# Optional Steps
+- Load the sample parquet files into the Dedicated SQL pool. If you have addiotnal files, just add them to the <b>Parquet_Auto_Ingestion_Metadata.csv</b> stored in the data container
+- Download the sample pocsynapseanalytics-dashboard.pbix from the Azure Cloud Shell and change the connection to use your new Synapse. This sample file includes a report that uses the tables loaded in the previous step 
