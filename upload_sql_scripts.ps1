@@ -1,3 +1,8 @@
+# Import Sql scripts to workspace
+# Change hardcoded version of <workspace-name> and replace during setup 
+$workspaceName = '<workspace-name>'
+$sqlScriptFileFolder = './artifacts/synapse_data_security/'
+
 # Get token for data plane
 $token = Get-AzAccessToken -ResourceUrl https://dev.azuresynapse.net
 $authHeader = @{
@@ -7,8 +12,7 @@ $authHeader = @{
  
 # Read sql script file and save content to body variable
 Get-ChildItem $sqlScriptFileFolder | ForEach-Object -Process {
-    #$body = '{"name":"<sql-script-name>","properties":{"content":{"query":"<sql-script>","metadata":{"language":"sql"},"currentConnection":{"databaseName":"master","poolName":"Built-in"},"resultLimit":5000},"type":"SqlQuery"}}'
-    $body = '{"name":"<sql-script-name>","properties":{"folder":{"name":"<folder-name>"},"content":{"query":"<sql-script>","metadata":{"language":"sql"},"currentConnection":{"databaseName":"master","poolName":"Built-in"},"resultLimit":5000},"type":"SqlQuery"}}'
+    $body = '{"name":"<sql-script-name>","properties":{"folder":{"name":"Synapse Data Security"},"content":{"query":"<sql-script>","metadata":{"language":"sql"},"currentConnection":{"databaseName":"master","poolName":"Built-in"},"resultLimit":5000},"type":"SqlQuery"}}'
     $sqlScriptName = $_.BaseName
     $body = $body -replace '<sql-script-name>', $sqlScriptName
     $script = Get-Content -Raw $_
