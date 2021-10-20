@@ -12,7 +12,7 @@ depandancies than what can be configured here.
 
 # How to Run
 
-These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
+These files should be executed from the Azure Cloud Shell at https://shell.azure.com using <b>PowerShell</b>:
 ```
 rm -rf Azure-Synapse-Analytics-PoC
 git clone https://github.com/tonio-lora/Azure-Synapse-Analytics-PoC  
