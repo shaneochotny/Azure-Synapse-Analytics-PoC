@@ -164,6 +164,8 @@ fi
 # Update PowerShell Scripts to upload SQL Scripts - This can be replaced once az cli supports SQL Scripts
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" ./upload_sql_scripts.ps1
 
+# Run PowerShell script to upload Scripts
+./upload_sql_scripts.ps1
 
 echo "Deployment complete!"
 touch configure.complete
