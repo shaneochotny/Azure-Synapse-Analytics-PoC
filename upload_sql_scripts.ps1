@@ -1,7 +1,6 @@
 # Import Sql scripts to workspace
 # Change hardcoded version of <workspace-name> and replace during setup 
-# $workspaceName = '<workspace-name>'
-$workspaceName = 'pocsynapseanalytics-bo9'
+$workspaceName = 'REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME'
 $sqlScriptFileFolder = './artifacts/synapse_data_security/'
 
 # Get token for data plane
