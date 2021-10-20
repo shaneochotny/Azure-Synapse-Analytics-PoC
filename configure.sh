@@ -141,8 +141,6 @@ sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingest
 az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/ --source artifacts/Parquet_Auto_Ingestion_Metadata.csv > /dev/null 2>&1
 
 # Copy sample data for the Parquet Auto Ingestion pipeline
-#az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/Sample/Bing_COVID19/ --source https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/bing_covid-19_data/latest/bing_covid-19_data.parquet > /dev/null 2>&1
-#az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/Sample/Public_Holidays/ --source https://azureopendatastorage.blob.core.windows.net/holidaydatacontainer/Processed/* > /dev/null 2>&1
 az storage copy --only-show-errors -o none --recursive --destination https://${datalakeName}.blob.core.windows.net/data/sample --source https://oneclickpocadls.blob.core.windows.net/data/sample/* > /dev/null 2>&1
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
@@ -162,6 +160,10 @@ if echo "$privateEndpointsEnabled" | grep -q "true"; then
     az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Deny --only-show-errors -o none
     az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
 fi
+
+# Update PowerShell Scripts to upload SQL Scripts - This can be replaced once az cli supports SQL Scripts
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" ./upload_sql_scripts.ps1
+
 
 echo "Deployment complete!"
 touch configure.complete
