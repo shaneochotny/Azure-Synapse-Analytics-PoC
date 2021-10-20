@@ -15,7 +15,7 @@ depandancies than what can be configured here.
 These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
 ```
 rm -rf Azure-Synapse-Analytics-PoC
-git clone --branch add-test-data https://github.com/tonio-lora/Azure-Synapse-Analytics-PoC  
+git clone https://github.com/tonio-lora/Azure-Synapse-Analytics-PoC  
 cd Azure-Synapse-Analytics-PoC  
 bash setup.sh 
 bash configure.sh 
