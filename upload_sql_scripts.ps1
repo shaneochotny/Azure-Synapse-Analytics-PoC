@@ -36,3 +36,17 @@ Get-ChildItem $sqlScriptFileFolder | ForEach-Object -Process {
     # Send request to create SQL script in a workspace
     Invoke-RestMethod -Method PUT -Uri https://${workspaceName}.dev.azuresynapse.net/sqlscripts/${sqlScriptName}?api-version=2020-12-01 -Body $body -Headers $authHeader
 }
+
+$sqlScriptFileFolder = './artifacts/synapse_stored_procedures/'
+Get-ChildItem $sqlScriptFileFolder | ForEach-Object -Process {
+    $body = '{"name":"<sql-script-name>","properties":{"folder":{"name":"<script folder name>"},"content":{"query":"<sql-script>","metadata":{"language":"sql"},"currentConnection":{"databaseName":"master","poolName":"Built-in"},"resultLimit":5000},"type":"SqlQuery"}}'
+    $folderName = 'Synapse Stored Procedures'
+    $body = $body -replace '<script folder name>', $folderName
+    $sqlScriptName = $_.BaseName
+    $body = $body -replace '<sql-script-name>', $sqlScriptName
+    $script = Get-Content -Raw $_
+    $body = $body -replace '<sql-script>', $script
+
+    # Send request to create SQL script in a workspace
+    Invoke-RestMethod -Method PUT -Uri https://${workspaceName}.dev.azuresynapse.net/sqlscripts/${sqlScriptName}?api-version=2020-12-01 -Body $body -Headers $authHeader
+}
