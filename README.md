@@ -52,4 +52,4 @@ bash configure.sh
 
 # Optional Steps
 - Load the sample parquet files into the Dedicated SQL pool. If you have addiotnal files, just add them to the <b>Parquet_Auto_Ingestion_Metadata.csv</b> stored in the data container
-- Download the sample pocsynapseanalytics-dashboard.pbix from the Azure Cloud Shell and change the connection to use your new Synapse. This sample file includes a report that uses the tables loaded in the previous step 
+- Download the [sample Power BI file] (./pocsynapseanalytics-dashboard.pbix) from the Azure Cloud Shell and change the connection to use your new Synapse. This sample file includes a report that uses the tables loaded in the previous step 
