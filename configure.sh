@@ -3,13 +3,6 @@
 # This script finishes the database level configuration that cannot be done in Terraform. It should be executed after the Terraform 
 # deployment because Terraform outputs several variables used by this script.
 #
-#   @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-#   @Azure:~$ cd Azure-Synapse-Analytics-PoC
-#   @Azure:~$ nano terraform.tfvars
-#   @Azure:~$ terraform init
-#   @Azure:~$ terraform plan
-#   @Azure:~$ terraform apply
-#   @Azure:~$ bash configure.sh
 #
 
 # Make sure this configuration script hasn't been executed already
@@ -92,7 +85,7 @@ fi
 
 # Enable Result Set Cache
 echo "Enabling Result Set Caching..."
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE DataWarehouse SET RESULT_SET_CACHING ON;"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE DataWarehouse SET RESULT_SET_CACHING ON;"
 
 echo "Creating the auto pause/resume pipeline..."
 
@@ -112,15 +105,15 @@ az synapse trigger create --only-show-errors -o none --workspace-name ${synapseA
 echo "Creating the parquet auto ingestion pipeline..."
 
 # Create the logging schema and tables for the Auto Ingestion pipeline
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
 
 # Create the Resource Class Logins
 cp artifacts/Create_Resource_Class_Logins.sql.tmpl artifacts/Create_Resource_Class_Logins.sql 2>&1
 sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Create_Resource_Class_Logins.sql
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -i artifacts/Create_Resource_Class_Logins.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -i artifacts/Create_Resource_Class_Logins.sql
 
 # Create the Resource Class Users
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Create_Resource_Class_Users.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Create_Resource_Class_Users.sql
 
 # Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/LS_Synapse_Managed_Identity.json.tmpl artifacts/LS_Synapse_Managed_Identity.json 2>&1
@@ -151,10 +144,10 @@ az synapse pipeline create --only-show-errors -o none --workspace-name ${synapse
 echo "Creating the Demo Data database using Synapse Serverless SQL..."
 
 # Create a Demo Data database using Synapse Serverless SQL
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d master -I -Q "CREATE DATABASE [Demo Data (Serverless)];"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d master -I -Q "CREATE DATABASE [Demo Data (Serverless)];"
 
 # Create the Views over the external data
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
