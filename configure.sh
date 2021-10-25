@@ -166,20 +166,18 @@ echo "Uploading SQL Scipts and Notebook samples..."
 
 # Update PowerShell Scripts to upload SQL Scripts - This can be replaced once az cli supports SQL Scripts
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" ./upload_sql_scripts.ps1
-
-# Run PowerShell script to upload Scripts
-# Run outside this command
-#./upload_sql_scripts.ps1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" ./upload_sql_scripts.ps1
 
 # Update Notebook variables
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
 
 # Create Sample Notebooks
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\01-load-staging-table" --file @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\02-load-dimension-table" --file @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\03-load-fact-table" --file @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+# Missing adding folder option: Synapse Spark Notebooks\
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01-load-staging-table" --file "@artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb"
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02-load-dimension-table" --file "@artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb"
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "03-load-fact-table" --file "@artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb"
 
 
 echo "Deployment complete!"
