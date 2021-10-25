@@ -5,7 +5,7 @@
     Create a Synapse Analytics environment based on best practices to achieve a successful proof of concept. While settings can be adjusted, 
     the major deployment differences are based on whether or not you used Private Endpoints for connectivity. If you do not already use 
     Private Endpoints for other Azure deployments, it's discouraged to use them for a proof of concept as they have many other networking 
-    depandancies than what can be configured here.
+    dependencies than what can be configured here.
 
     Resources:
 
@@ -13,6 +13,8 @@
           - DW1000 Dedicated SQL Pool
           - Pipelines to automatically pause and resume the Dedicated SQL Pool on a schedule
           - Parquet Auto Ingestion pipeline to help ease and optimize data ingestion using best practices
+          - Set of SQL Scripts and Spark Notebooks to showcase some Synapse features
+          - The Adventure Works DW 2-19 dataset as Parquet files
 
       Azure Data Lake Storage Gen2:
           - Storage for the Synapse Analytics Workspace configuration data
@@ -59,9 +61,13 @@ resource "random_string" "suffix" {
 
   Outputs
 
-        We output certain variables that need to be referenced by the Configuration.sh bash script.
+        We output certain variables that need to be referenced by the configure.sh bash script.
 
 ************************************************************************************************************************************************/
+
+output "synapse_sql_pool_name" {
+  value = var.synapse_sql_pool_name
+}
 
 output "synapse_sql_administrator_login" {
   value = var.synapse_sql_administrator_login
@@ -422,7 +428,7 @@ resource "azurerm_monitor_diagnostic_setting" "synapse-workspace-diagnostics" {
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-sql-pool-studio
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/synapse_sql_pool
 resource "azurerm_synapse_sql_pool" "synapsesqlpool" {
-  name                 = "DataWarehouse"
+  name                 = var.synapse_sql_pool_name
   synapse_workspace_id = azurerm_synapse_workspace.synapsews.id
   sku_name             = "DW1000c"
   create_mode          = "Default"
