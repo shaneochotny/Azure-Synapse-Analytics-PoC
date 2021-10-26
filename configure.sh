@@ -3,13 +3,6 @@
 # This script finishes the database level configuration that cannot be done in Terraform. It should be executed after the Terraform 
 # deployment because Terraform outputs several variables used by this script.
 #
-#   @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-#   @Azure:~$ cd Azure-Synapse-Analytics-PoC
-#   @Azure:~$ nano terraform.tfvars
-#   @Azure:~$ terraform init
-#   @Azure:~$ terraform plan
-#   @Azure:~$ terraform apply
-#   @Azure:~$ bash configure.sh
 #
 
 # Make sure this configuration script hasn't been executed already
@@ -68,6 +61,7 @@ echo "Azure AD Username: ${azureUsername}"
 # Get the output variables from Terraform
 synapseAnalyticsWorkspaceResourceGroup=$(terraform output -raw synapse_analytics_workspace_resource_group 2>&1)
 synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
+synapseAnalyticsSQLPoolName=$(terraform output -raw synapse_sql_pool_name 2>&1)
 synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
 synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
 datalakeName=$(terraform output -raw datalake_name 2>&1)
@@ -92,7 +86,7 @@ fi
 
 # Enable Result Set Cache
 echo "Enabling Result Set Caching..."
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE DataWarehouse SET RESULT_SET_CACHING ON;"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET RESULT_SET_CACHING ON;"
 
 echo "Creating the auto pause/resume pipeline..."
 
@@ -101,6 +95,7 @@ cp artifacts/Auto_Pause_and_Resume.json.tmpl artifacts/Auto_Pause_and_Resume.jso
 sed -i "s/REPLACE_SUBSCRIPTION/${azureSubscriptionID}/g" artifacts/Auto_Pause_and_Resume.json
 sed -i "s/REPLACE_RESOURCE_GROUP/${synapseAnalyticsWorkspaceResourceGroup}/g" artifacts/Auto_Pause_and_Resume.json
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Auto_Pause_and_Resume.json
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/Auto_Pause_and_Resume.json
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Auto Pause and Resume" --file @artifacts/Auto_Pause_and_Resume.json
@@ -112,24 +107,27 @@ az synapse trigger create --only-show-errors -o none --workspace-name ${synapseA
 echo "Creating the parquet auto ingestion pipeline..."
 
 # Create the logging schema and tables for the Auto Ingestion pipeline
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i artifacts/Auto_Ingestion_Logging_DDL.sql > /dev/null 2>&1
 
 # Create the Resource Class Logins
 cp artifacts/Create_Resource_Class_Logins.sql.tmpl artifacts/Create_Resource_Class_Logins.sql 2>&1
 sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Create_Resource_Class_Logins.sql
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -i artifacts/Create_Resource_Class_Logins.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -i artifacts/Create_Resource_Class_Logins.sql
 
 # Create the Resource Class Users
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d DataWarehouse -I -i artifacts/Create_Resource_Class_Users.sql
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/Create_Resource_Class_Users.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i artifacts/Create_Resource_Class_Users.sql
 
 # Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/LS_Synapse_Managed_Identity.json.tmpl artifacts/LS_Synapse_Managed_Identity.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/LS_Synapse_Managed_Identity.json
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/LS_Synapse_Managed_Identity.json
 az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @artifacts/LS_Synapse_Managed_Identity.json
 
 # Create the DS_Synapse_Managed_Identity Dataset. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/DS_Synapse_Managed_Identity.json.tmpl artifacts/DS_Synapse_Managed_Identity.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/DS_Synapse_Managed_Identity.json
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/DS_Synapse_Managed_Identity.json
 az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @artifacts/DS_Synapse_Managed_Identity.json
 
 # Copy the Parquet Auto Ingestion Pipeline template and update the variables
@@ -137,6 +135,7 @@ cp artifacts/Parquet_Auto_Ingestion.json.tmpl artifacts/Parquet_Auto_Ingestion.j
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Parquet_Auto_Ingestion.json
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingestion.json
 sed -i "s#REPLACE_DATALAKE_KEY#${datalakeKey}#g" artifacts/Parquet_Auto_Ingestion.json
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/Parquet_Auto_Ingestion.json
 
 # Update the Parquet Auto Ingestion Metadata file tamplate with the correct storage account and then upload it
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingestion_Metadata.csv
@@ -151,10 +150,10 @@ az synapse pipeline create --only-show-errors -o none --workspace-name ${synapse
 echo "Creating the Demo Data database using Synapse Serverless SQL..."
 
 # Create a Demo Data database using Synapse Serverless SQL
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d master -I -Q "CREATE DATABASE [Demo Data (Serverless)];"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d master -I -Q "CREATE DATABASE [Demo Data (Serverless)];"
 
 # Create the Views over the external data
-sqlcmd -U sqladminuser -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
@@ -167,20 +166,18 @@ echo "Uploading SQL Scipts and Notebook samples..."
 
 # Update PowerShell Scripts to upload SQL Scripts - This can be replaced once az cli supports SQL Scripts
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" ./upload_sql_scripts.ps1
-
-# Run PowerShell script to upload Scripts
-# Run outside this command
-#./upload_sql_scripts.ps1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" ./upload_sql_scripts.ps1
 
 # Update Notebook variables
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-#sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" ./artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
 
 # Create Sample Notebooks
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\01-load-staging-table" --file @artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\02-load-dimension-table" --file @artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb
-#az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "Synapse Spark Notebooks\03-load-fact-table" --file @artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb
+# Missing adding folder option: Synapse Spark Notebooks\
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01-load-staging-table" --file "@artifacts/synapse_spark_notebooks/01-load-staging-table.ipynb"
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02-load-dimension-table" --file "@artifacts/synapse_spark_notebooks/02-load-dimension-table.ipynb"
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "03-load-fact-table" --file "@artifacts/synapse_spark_notebooks/03-load-fact-table.ipynb"
 
 
 echo "Deployment complete!"

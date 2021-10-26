@@ -2,10 +2,6 @@
 #
 # This script runs the Terraform commands.
 #
-#   @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-#   @Azure:~$ cd Azure-Synapse-Analytics-PoC
-#   @Azure:~$ setup.sh
-#   @Azure:~$ bash configure.sh
 #
 
 # Make sure this configuration script hasn't been executed already
