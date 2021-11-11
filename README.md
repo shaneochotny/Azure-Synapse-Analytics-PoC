@@ -16,7 +16,7 @@ These files should be executed from the Azure Cloud Shell at https://shell.azure
 ```
 @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
 @Azure:~$ cd Azure-Synapse-Analytics-PoC  
-@Azure:~$ nano terraform.tfvars 
+@Azure:~$ code terraform.tfvars 
 @Azure:~$ terraform init  
 @Azure:~$ terraform plan  
 @Azure:~$ terraform apply  
@@ -39,7 +39,6 @@ These files should be executed from the Azure Cloud Shell at https://shell.azure
 ### Azure Log Analytics
 - Logging and telemetry for Azure Synapse Analytics
 - Logging and telemetry for Azure Data Lake Storage Gen2
-
 
 # What's Configured
 - Enable Result Set Caching
