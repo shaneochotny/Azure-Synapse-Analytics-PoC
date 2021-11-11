@@ -14,6 +14,10 @@ variable "resource_group_name" {
   description = "Resource Group for all related Azure services."
 }
 
+variable "synapse_sql_pool_name" {
+  description = "Name of the SQL pool to create."
+}
+
 variable "synapse_sql_administrator_login" {
   description = "Native SQL account for administration."
 }

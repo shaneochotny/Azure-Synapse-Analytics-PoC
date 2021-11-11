@@ -1,7 +1,7 @@
 -- Parquet Auto Ingestion
 -- Create Users for different Resource Classes
 
--- USE [DataWarehouse]
+-- USE [REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME]
 CREATE USER Userstaticrc10 FOR LOGIN Userstaticrc10; 
 GO 
 EXEC sp_addrolemember 'db_owner', 'Userstaticrc10';

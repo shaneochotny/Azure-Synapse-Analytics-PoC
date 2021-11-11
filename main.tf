@@ -63,6 +63,10 @@ resource "random_string" "suffix" {
 
 ************************************************************************************************************************************************/
 
+output "synapse_sql_pool_name" {
+  value = var.synapse_sql_pool_name
+}
+
 output "synapse_sql_administrator_login" {
   value = var.synapse_sql_administrator_login
 }
@@ -422,7 +426,7 @@ resource "azurerm_monitor_diagnostic_setting" "synapse-workspace-diagnostics" {
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-sql-pool-studio
 //   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/synapse_sql_pool
 resource "azurerm_synapse_sql_pool" "synapsesqlpool" {
-  name                 = "DataWarehouse"
+  name                 = var.synapse_sql_pool_name
   synapse_workspace_id = azurerm_synapse_workspace.synapsews.id
   sku_name             = "DW1000c"
   create_mode          = "Default"
