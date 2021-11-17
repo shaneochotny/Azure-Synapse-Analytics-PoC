@@ -1,42 +1,39 @@
 #!/bin/bash
 #
-# This script finishes the database level configuration that cannot be done in Terraform. It should be executed after the Terraform 
-# deployment because Terraform outputs several variables used by this script.
+# This script is in two parts; Synapse Environment Deployment and Post-Deployment Configuration.
 #
-#   @Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-#   @Azure:~$ cd Azure-Synapse-Analytics-PoC
-#   @Azure:~$ nano terraform.tfvars
-#   @Azure:~$ terraform init
-#   @Azure:~$ terraform plan
-#   @Azure:~$ terraform apply
-#   @Azure:~$ bash configure.sh
+#   Part 1: Synapse Environment Deployment
 #
+#       This simply calls the Terraform or Bicep deployment commands for us. This is only to help make the PoC deployment as
+#       simple as possible by giving you a single command to execute. You wouldn't normally invoke a Terraform or Bicep
+#       deployment of Synapse via a bash script like this, but we had to balance giving you a simple PoC deployment path along
+#       with providing Terraform and Bicep templates for reuse. That said, the terraform and Bicep templates are created using 
+#       best practices and can be deployed manually. We realize that some people interested in a Synapse PoC environment, and 
+#       some are interested in just having the deployment templates.
+#
+#    Part 2: Post-Deployment Configuration
+#
+#       These are post-deployment configurations done at the data plan level which is beyond the scope of what Terraform and 
+#       Bicep are capable of managing or would normally manage. Database settings are made, sample data is ingested, and 
+#       pipelines are created for the PoC.
+
+#
+# Part 1: Synapse Environment Deployment
+#
+
+resourceGroup="PoC-Synapse-Analytics-V2"
+
+# Set the default deployment type to Bicep if not specified
+deploymentTypeArgument=$1
+if [ "$deploymentTypeArgument" != "terraform" ] && [ "$deploymentTypeArgument" != "bicep" ]; then
+    deploymentTypeArgument="bicep"
+fi
 
 # Make sure this configuration script hasn't been executed already
 if [ -f "configure.complete" ]; then
     echo "ERROR: It appears this configuration has already been completed.";
     exit 1;
 fi
-
-# Make sure we have all the required artifacts
-declare -A artifactFiles
-artifactFiles[1]="artifacts/Auto_Ingestion_Logging_DDL.sql"
-artifactFiles[2]="artifacts/Auto_Pause_and_Resume.json.tmpl"
-artifactFiles[3]="artifacts/Create_Resource_Class_Logins.sql.tmpl"
-artifactFiles[4]="artifacts/Create_Resource_Class_Users.sql"
-artifactFiles[5]="artifacts/Demo_Data_Serverless_DDL.sql"
-artifactFiles[6]="artifacts/DS_Synapse_Managed_Identity.json.tmpl"
-artifactFiles[7]="artifacts/LS_Synapse_Managed_Identity.json.tmpl"
-artifactFiles[8]="artifacts/Parquet_Auto_Ingestion_Metadata.csv"
-artifactFiles[9]="artifacts/Parquet_Auto_Ingestion.json.tmpl"
-artifactFiles[10]="artifacts/triggerPause.json.tmpl"
-artifactFiles[11]="artifacts/triggerResume.json.tmpl"
-for file in "${artifactFiles[@]}"; do
-    if ! [ -f "$file" ]; then
-        echo "ERROR: The required $file file does not exist. Please clone the git repo with the supporting artifacts and then execute this script.";
-        exit 1;
-    fi
-done
 
 # Try and determine if we're executing from within the Azure Cloud Shell
 if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
@@ -51,42 +48,70 @@ if echo "$aadToken" | grep -q "ERROR"; then
     exit 1;
 fi
 
-# Make sure the Terraform deployment was completed by checking if the terraform.tfstate file exists
-if ! [ -f "terraform.tfstate" ]; then
-    echo "ERROR: It does not appear that the Terraform deployment was completed for the Synaspe Analytics environment. That must be completed before executing this script.";
-    exit 1;
-fi
-
 # Get environment details
-azureSubscriptionName=$(az account show --query "name" --output tsv 2>&1)
-azureSubscriptionID=$(az account show --query "id" --output tsv 2>&1)
-azureUsername=$(az account show --query "user.name" --output tsv 2>&1)
+azureSubscriptionName=$(az account show --query name --output tsv 2>&1)
+azureSubscriptionID=$(az account show --query id --output tsv 2>&1)
+azureUsername=$(az account show --query user.name --output tsv 2>&1)
+azureUsernameObjectId=$(az ad user show --id $azureUsername --query objectId --output tsv 2>&1)
 echo "Azure Subscription: ${azureSubscriptionName}"
 echo "Azure Subscription ID: ${azureSubscriptionID}"
 echo "Azure AD Username: ${azureUsername}"
 
-# Get the output variables from Terraform
-synapseAnalyticsWorkspaceResourceGroup=$(terraform output -raw synapse_analytics_workspace_resource_group 2>&1)
-synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
-synapseAnalyticsSQLPoolName=$(terraform output -raw synapse_sql_pool_name 2>&1)
-synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
-synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
-datalakeName=$(terraform output -raw datalake_name 2>&1)
-datalakeKey=$(terraform output -raw datalake_key 2>&1)
-privateEndpointsEnabled=$(terraform output -raw private_endpoints_enabled 2>&1)
-if echo "$synapseAnalyticsWorkspaceName" | grep -q "The output variable requested could not be found"; then
-    echo "ERROR: It doesn't look like a 'terraform apply' was performed. This script needs to be executed after the Terraform deployment.";
+# Update a few Terraform and Bicep variables if they aren't configured by the user
+sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_UPN/${azureUsername}/g" Terraform/terraform.tfvars.json
+sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" Bicep/main.parameters.json
+
+# 'bash deploy.sh terraform' = Execute Part 2 only. User executed Terraform manually.
+# 'bash deploy.sh bicep' = Execute Part 2 only. User executed Bicep manually.
+# 'bash deploy.sh' = Run the Bicep deployment and then execute Part 2 (Easy Button).
+
+# If a Terraform deployment is specified, check to see if Terraform was actually run
+if [ "$deploymentTypeArgument" == "terraform" ] && [ ! -f "Terraform/terraform.tfstate" ]; then
+    echo "ERROR: You specified a 'terraform' deployment but it does not appear that you have run the terraform deployment commands.";
     exit 1;
 fi
-echo "Synapse Analytics Workspace Resource Group: ${synapseAnalyticsWorkspaceResourceGroup}"
+
+# If a deployment type wasn't specified, default to Bicep and deploy the environment for them
+bicepDeployment=$(az deployment group show --resource-group ${resourceGroup} --name PoC 2>&1)
+if [ "$1" == "" ] && [ echo "$bicepDeployment" | grep -q "could not be found" ]; then
+    az deployment group create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --resource-group ${resourceGroup} --name PoC
+fi
+
+#
+# Part 2: Post-Deployment Configuration
+#
+
+# Get the output variables from Terraform
+if [ "$deploymentTypeArgument" == "terraform" ]; then
+    synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
+    synapseAnalyticsSQLPoolName=$(terraform output -raw synapse_sql_pool_name 2>&1)
+    synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
+    synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
+    datalakeName=$(terraform output -raw datalake_name 2>&1)
+    datalakeKey=$(terraform output -raw datalake_key 2>&1)
+    privateEndpointsEnabled=$(terraform output -raw private_endpoints_enabled 2>&1)
+fi
+
+# Get the output variables from Bicep
+if [ "$deploymentTypeArgument" == "bicep" ]; then
+    synapseAnalyticsWorkspaceName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_analytics_workspace_name.value 2>&1)
+    synapseAnalyticsSQLPoolName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_pool_name.value 2>&1)
+    synapseAnalyticsSQLAdmin=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login.value 2>&1)
+    synapseAnalyticsSQLAdminPassword=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login_password.value 2>&1)
+    datalakeName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_name.value 2>&1)
+    datalakeKey=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_key.value 2>&1)
+    privateEndpointsEnabled=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.private_endpoints_enabled.value 2>&1)
+fi
+
+echo "Synapse Analytics Workspace Resource Group: ${resourceGroup}"
 echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
 echo "Data Lake Name: ${datalakeName}"
 
 # If Private Endpoints are enabled, temporarily disable the firewalls so we can copy files and perform additional configuration
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
-    az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Allow --only-show-errors -o none
-    az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none
+    az storage account update --name ${datalakeName} --resource-group ${resourceGroup} --default-action Allow --only-show-errors -o none
+    az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none
 fi
 
 # Enable Result Set Cache
@@ -98,7 +123,7 @@ echo "Creating the auto pause/resume pipeline..."
 # Copy the Auto_Pause_and_Resume Pipeline template and update the variables
 cp artifacts/Auto_Pause_and_Resume.json.tmpl artifacts/Auto_Pause_and_Resume.json 2>&1
 sed -i "s/REPLACE_SUBSCRIPTION/${azureSubscriptionID}/g" artifacts/Auto_Pause_and_Resume.json
-sed -i "s/REPLACE_RESOURCE_GROUP/${synapseAnalyticsWorkspaceResourceGroup}/g" artifacts/Auto_Pause_and_Resume.json
+sed -i "s/REPLACE_RESOURCE_GROUP/${resourceGroup}/g" artifacts/Auto_Pause_and_Resume.json
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Auto_Pause_and_Resume.json
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/Auto_Pause_and_Resume.json
 
@@ -163,8 +188,8 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if echo "$privateEndpointsEnabled" | grep -q "true"; then
     echo "Restoring firewall rules..."
-    az storage account update --name ${datalakeName} --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --default-action Deny --only-show-errors -o none
-    az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${synapseAnalyticsWorkspaceResourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
+    az storage account update --name ${datalakeName} --resource-group ${resourceGroup} --default-action Deny --only-show-errors -o none
+    az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
 fi
 
 echo "Deployment complete!"
