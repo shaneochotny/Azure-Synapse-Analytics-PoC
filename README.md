@@ -12,20 +12,35 @@ depandancies than what can be configured here.
 
 # How to Run
 
+### "Easy Button" Deployment
 These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
 ```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC  
-@Azure:~$ cd Azure-Synapse-Analytics-PoC  
-@Azure:~$ code terraform.tfvars 
-@Azure:~$ terraform init  
-@Azure:~$ terraform plan  
-@Azure:~$ terraform apply  
-@Azure:~$ bash configure.sh 
+@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+@Azure:~$ cd Azure-Synapse-Analytics-PoC
+@Azure:~$ bash deploySynapse.sh 
 ```
 
-- There are a few variables in <b>terraform.tfvars</b> which should be updated to reflect your environment, but at a minimum <b>synapse_azure_ad_admin_upn</b> needs to be updated to deploy.
-- <b>main.tf</b> is the Terraform template which deploys the environment. <b>configure.sh</b> performs post deployment configuration that cannot be done with Terraform.
+### Advanced Deployment: Bicep
+These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
+```
+@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+@Azure:~$ cd Azure-Synapse-Analytics-PoC
+@Azure:~$ code Bicep/main.parameters.json
+@Azure:~$ az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location eastus
+@Azure:~$ bash deploySynapse.sh 
+```
 
+### Advanced Deployment: Terraform
+These files should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
+```
+@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+@Azure:~$ cd Azure-Synapse-Analytics-PoC
+@Azure:~$ code Terraform/terraform.tfvars
+@Azure:~$ terraform -chdir=Terraform init
+@Azure:~$ terraform -chdir=Terraform plan
+@Azure:~$ terraform -chdir=Terraform Apply
+@Azure:~$ bash deploySynapse.sh
+```
 
 # What's Deployed
 
