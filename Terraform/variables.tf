@@ -10,6 +10,10 @@ variable "azure_region" {
   description = "Region to create all the resources in."
 }
 
+variable "resource_group_name" {
+  description = "Resource Group for all related Azure services."
+}
+
 variable "synapse_sql_pool_name" {
   description = "Name of the SQL pool to create."
 }

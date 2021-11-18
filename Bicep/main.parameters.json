@@ -2,45 +2,32 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-
-    // Region to create all the resources in.
     "azure_region": {
       "value": "eastus"  
     },
-
-    // Name of the SQL pool to create.
+    "resource_group_name": {
+      "value": "PoC-Synapse-Analytics-V2"
+    },
     "synapse_sql_pool_name": {
       "value": "DataWarehouse" 
     },
-
-    //Native SQL account for administration.
     "synapse_sql_administrator_login": {
       "value": "sqladminuser" 
     },
-
-    // Password for the native SQL admin account above.
     "synapse_sql_administrator_login_password": {
       "value": "Pass@word123" 
     },
-
-    // Object ID (GUID) for the Azure AD administrator of Synapse. This can also be a group, but only one value can be specified. (i.e. XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXXXXXX). "az ad user show --id "sochotny@microsoft.com" --query objectId --output tsv"
     "synapse_azure_ad_admin_object_id": {
       "value": "REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID" 
     },
-
-    //If true, create Private Endpoints for Synapse Analytics. This assumes you have other Private Endpoint requirements configured and in place such as virtual networks, VPN/Express Route, and private DNS forwarding.
     "enable_private_endpoints": {
-      "value": "false" 
+      "value": false
     },
-
-    //Name of the Virtual Network where you want to create the Private Endpoints. (i.e. vnet-data-platform)
     "private_endpoint_virtual_network": {
-      "value": "false" 
+      "value": "" 
     },
-
-    // Name of the Subnet within the Virtual Network where you want to create the Private Endpoints. (i.e. private-endpoint-subnet)
     "private_endpoint_virtual_network_subnet": {
-      "value": "false" 
+      "value": "" 
     }
 
   }

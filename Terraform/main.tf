@@ -47,11 +47,6 @@ provider "azuread" {
 
 data "azurerm_client_config" "current" {}
 
-variable "resource_group_name" {
-  default = "PoC-Synapse-Analytics-V2"
-  description = "Resource Group for all related Azure services."
-}
-
 // Add a random suffix to ensure global uniqueness among the resources created
 //   Terraform: https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
 resource "random_string" "suffix" {
@@ -82,6 +77,10 @@ output "synapse_sql_administrator_login_password" {
 
 output "synapse_analytics_workspace_name" {
   value = "pocsynapseanalytics-${random_string.suffix.id}"
+}
+
+output "synapse_analytics_workspace_resource_group" {
+  value = var.resource_group_name
 }
 
 output "datalake_name" {
@@ -153,6 +152,25 @@ data "azurerm_resources" "synapse-dev-privatelink-dns" {
 data "azurerm_resources" "synapse-sql-privatelink-dns" {
   name = "privatelink.sql.azuresynapse.net"
   type = "Microsoft.Network/privateDnsZones"
+}
+
+/************************************************************************************************************************************************
+  Resource Group
+        All of the resources will be created in this Resource Group.
+************************************************************************************************************************************************/
+
+//  Create the Resource Group
+//   Azure: https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal
+//   Terraform: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group
+resource "azurerm_resource_group" "resource_group" {
+  name     = var.resource_group_name
+  location = var.azure_region
+
+  tags = {
+    Environment = "PoC"
+    Application = "Azure Synapse Analytics"
+    Purpose     = "Azure Synapse Analytics Proof of Concept"
+  }
 }
 
 /************************************************************************************************************************************************

@@ -4,33 +4,29 @@
 #
 #   Part 1: Synapse Environment Deployment
 #
-#       This simply calls the Terraform or Bicep deployment commands for us. This is only to help make the PoC deployment as
-#       simple as possible by giving you a single command to execute. You wouldn't normally invoke a Terraform or Bicep
-#       deployment of Synapse via a bash script like this, but we had to balance giving you a simple PoC deployment path along
-#       with providing Terraform and Bicep templates for reuse. That said, the terraform and Bicep templates are created using 
-#       best practices and can be deployed manually. We realize that some people interested in a Synapse PoC environment, and 
-#       some are interested in just having the deployment templates.
+#       This is simply validation that the Terraform or Bicep deployment was completed before executing the post-deployment 
+#       configuration. If the deployment was not completed, it will deploy the Synapse environment for you via Bicep.
 #
-#    Part 2: Post-Deployment Configuration
+#   Part 2: Post-Deployment Configuration
 #
 #       These are post-deployment configurations done at the data plan level which is beyond the scope of what Terraform and 
 #       Bicep are capable of managing or would normally manage. Database settings are made, sample data is ingested, and 
 #       pipelines are created for the PoC.
+#
+#   This script should be executed via the Azure Cloud Shell via:
+#
+#       @Azure:~/Azure-Synapse-Analytics-PoC$ bash deploySynapse.sh
+#
+# Todo:
+#    - Bicep private endpoints
+#    - Synapse "Lake Databases"
 
 #
 # Part 1: Synapse Environment Deployment
 #
 
-resourceGroup="PoC-Synapse-Analytics-V2"
-
-# Set the default deployment type to Bicep if not specified
-deploymentTypeArgument=$1
-if [ "$deploymentTypeArgument" != "terraform" ] && [ "$deploymentTypeArgument" != "bicep" ]; then
-    deploymentTypeArgument="bicep"
-fi
-
 # Make sure this configuration script hasn't been executed already
-if [ -f "configure.complete" ]; then
+if [ -f "deploySynapse.complete" ]; then
     echo "ERROR: It appears this configuration has already been completed.";
     exit 1;
 fi
@@ -53,36 +49,43 @@ azureSubscriptionName=$(az account show --query name --output tsv 2>&1)
 azureSubscriptionID=$(az account show --query id --output tsv 2>&1)
 azureUsername=$(az account show --query user.name --output tsv 2>&1)
 azureUsernameObjectId=$(az ad user show --id $azureUsername --query objectId --output tsv 2>&1)
-echo "Azure Subscription: ${azureSubscriptionName}"
-echo "Azure Subscription ID: ${azureSubscriptionID}"
-echo "Azure AD Username: ${azureUsername}"
 
 # Update a few Terraform and Bicep variables if they aren't configured by the user
-sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_UPN/${azureUsername}/g" Terraform/terraform.tfvars.json
+sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_UPN/${azureUsername}/g" Terraform/terraform.tfvars
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" Bicep/main.parameters.json
 
-# 'bash deploy.sh terraform' = Execute Part 2 only. User executed Terraform manually.
-# 'bash deploy.sh bicep' = Execute Part 2 only. User executed Bicep manually.
-# 'bash deploy.sh' = Run the Bicep deployment and then execute Part 2 (Easy Button).
-
-# If a Terraform deployment is specified, check to see if Terraform was actually run
-if [ "$deploymentTypeArgument" == "terraform" ] && [ ! -f "Terraform/terraform.tfstate" ]; then
-    echo "ERROR: You specified a 'terraform' deployment but it does not appear that you have run the terraform deployment commands.";
-    exit 1;
+# See if a Terraform deployment was completed
+if [ -f "Terraform/terraform.tfstate" ]; then
+    deploymentType="terraform"
+else
+    azureRegion=$(jq -r .parameters.azure_region.value Bicep/main.parameters.json 2>&1)
+    resourceGroup=$(jq -r .parameters.resource_group_name.value Bicep/main.parameters.json 2>&1)
+    # See if a Bicep deployment was completed. If not, assume we're taking the easy button approach and deploying the Synapse
+    # environment on behalf of the user via Bicep.
+    bicepDeploymentCheck=$(az deployment group show --resource-group ${resourceGroup} --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
+    if echo "$bicepDeploymentCheck" | grep -q "could not be found"; then
+        deploymentType="bicep"
+        echo "Deploying Synapse Environment. This will take several minutes..."
+        az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion}
+    else
+        deploymentType="bicep"
+    fi
 fi
 
-# If a deployment type wasn't specified, default to Bicep and deploy the environment for them
-bicepDeployment=$(az deployment group show --resource-group ${resourceGroup} --name PoC 2>&1)
-if [ "$1" == "" ] && [ echo "$bicepDeployment" | grep -q "could not be found" ]; then
-    az deployment group create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --resource-group ${resourceGroup} --name PoC
+# Let's double check that the Bicep deployment was actually successful before proceeding with Part 2
+bicepDeploymentCheck=$(az deployment group show --resource-group ${resourceGroup} --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
+if [ "$deploymentType" == "bicep" ] && [ "$bicepDeploymentCheck" != "Succeeded" ]; then
+    echo "ERROR: It looks like a Bicep deployment was attempted, but failed."
+    exit 1;
 fi
 
 #
 # Part 2: Post-Deployment Configuration
 #
 
-# Get the output variables from Terraform
-if [ "$deploymentTypeArgument" == "terraform" ]; then
+# Get the output variables from the Terraform deployment
+if [ "$deploymentType" == "terraform" ]; then
+    resourceGroup=$(terraform output -raw synapse_analytics_workspace_resource_group 2>&1)
     synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
     synapseAnalyticsSQLPoolName=$(terraform output -raw synapse_sql_pool_name 2>&1)
     synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
@@ -92,17 +95,21 @@ if [ "$deploymentTypeArgument" == "terraform" ]; then
     privateEndpointsEnabled=$(terraform output -raw private_endpoints_enabled 2>&1)
 fi
 
-# Get the output variables from Bicep
-if [ "$deploymentTypeArgument" == "bicep" ]; then
-    synapseAnalyticsWorkspaceName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_analytics_workspace_name.value 2>&1)
-    synapseAnalyticsSQLPoolName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_pool_name.value 2>&1)
-    synapseAnalyticsSQLAdmin=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login.value 2>&1)
-    synapseAnalyticsSQLAdminPassword=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login_password.value 2>&1)
-    datalakeName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_name.value 2>&1)
-    datalakeKey=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_key.value 2>&1)
-    privateEndpointsEnabled=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.private_endpoints_enabled.value 2>&1)
+# Get the output variables from the Bicep deployment
+if [ "$deploymentType" == "bicep" ]; then
+    synapseAnalyticsWorkspaceName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_analytics_workspace_name.value --output tsv 2>&1)
+    synapseAnalyticsSQLPoolName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_pool_name.value --output tsv 2>&1)
+    synapseAnalyticsSQLAdmin=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login.value --output tsv 2>&1)
+    synapseAnalyticsSQLAdminPassword=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login_password.value --output tsv 2>&1)
+    datalakeName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_name.value --output tsv 2>&1)
+    datalakeKey=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_key.value --output tsv 2>&1)
+    privateEndpointsEnabled=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.private_endpoints_enabled.value --output tsv 2>&1)
 fi
 
+echo "Deployment Type: ${deploymentType}"
+echo "Azure Subscription: ${azureSubscriptionName}"
+echo "Azure Subscription ID: ${azureSubscriptionID}"
+echo "Azure AD Username: ${azureUsername}"
 echo "Synapse Analytics Workspace Resource Group: ${resourceGroup}"
 echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
 echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
@@ -157,6 +164,7 @@ az synapse linked-service create --only-show-errors -o none --workspace-name ${s
 # Create the DS_Synapse_Managed_Identity Dataset. This is primarily used for the Auto Ingestion pipeline.
 cp artifacts/DS_Synapse_Managed_Identity.json.tmpl artifacts/DS_Synapse_Managed_Identity.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/DS_Synapse_Managed_Identity.json
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" artifacts/DS_Synapse_Managed_Identity.json
 az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @artifacts/DS_Synapse_Managed_Identity.json
 
 # Copy the Parquet Auto Ingestion Pipeline template and update the variables
@@ -193,4 +201,4 @@ if echo "$privateEndpointsEnabled" | grep -q "true"; then
 fi
 
 echo "Deployment complete!"
-touch configure.complete
+touch deploySynapse.complete
