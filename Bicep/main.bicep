@@ -88,6 +88,9 @@ module synapseStorageAccount 'modules/storageAccount.bicep' = {
     azure_region: azure_region
     synapse_azure_ad_admin_object_id: synapse_azure_ad_admin_object_id
     logAnalyticsId: logAnalyticsWorkspace.outputs.workspaceId
+    enable_private_endpoints: enable_private_endpoints
+    private_endpoint_virtual_network: private_endpoint_virtual_network
+    private_endpoint_virtual_network_subnet: private_endpoint_virtual_network_subnet
   }
 
   dependsOn: [
@@ -107,6 +110,9 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     synapse_sql_administrator_login_password: synapse_sql_administrator_login_password
     synapseStorageAccountDFS: synapseStorageAccount.outputs.synapseStorageAccountDFS
     logAnalyticsId: logAnalyticsWorkspace.outputs.workspaceId
+    enable_private_endpoints: enable_private_endpoints
+    private_endpoint_virtual_network: private_endpoint_virtual_network
+    private_endpoint_virtual_network_subnet: private_endpoint_virtual_network_subnet
   }
 
   dependsOn: [

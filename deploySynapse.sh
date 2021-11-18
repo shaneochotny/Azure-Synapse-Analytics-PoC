@@ -66,7 +66,7 @@ else
     if echo "$bicepDeploymentCheck" | grep -q "could not be found"; then
         deploymentType="bicep"
         echo "Deploying Synapse Environment. This will take several minutes..."
-        az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion}
+        az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion} --only-show-errors
     else
         deploymentType="bicep"
     fi

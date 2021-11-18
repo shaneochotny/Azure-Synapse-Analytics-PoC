@@ -15,6 +15,9 @@ param synapse_sql_administrator_login string
 param synapse_sql_administrator_login_password string
 param synapseStorageAccountDFS string
 param logAnalyticsId string
+param enable_private_endpoints bool
+param private_endpoint_virtual_network string
+param private_endpoint_virtual_network_subnet string
 
 // Synapse Workspace
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/overview-what-is

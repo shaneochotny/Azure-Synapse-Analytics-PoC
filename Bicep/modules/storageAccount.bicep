@@ -12,6 +12,9 @@ param suffix string
 param azure_region string
 param synapse_azure_ad_admin_object_id string
 param logAnalyticsId string
+param enable_private_endpoints bool
+param private_endpoint_virtual_network string
+param private_endpoint_virtual_network_subnet string
 
 // Azure Data Lake Storage Gen2: Storage for the Synapse Workspace configuration data and test data
 //   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction
