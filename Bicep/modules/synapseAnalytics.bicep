@@ -132,7 +132,7 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
   parent: synapseWorkspace
   location: azure_region
   sku: {
-    name: 'DW100c'
+    name: 'DW1000c'
   }
 
   dependsOn: [

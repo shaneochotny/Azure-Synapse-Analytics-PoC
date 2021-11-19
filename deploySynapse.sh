@@ -62,18 +62,18 @@ else
     resourceGroup=$(jq -r .parameters.resource_group_name.value Bicep/main.parameters.json 2>&1)
     # See if a Bicep deployment was completed. If not, assume we're taking the easy button approach and deploying the Synapse
     # environment on behalf of the user via Bicep.
-    bicepDeploymentCheck=$(az deployment group show --resource-group ${resourceGroup} --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
+    bicepDeploymentCheck=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
     if echo "$bicepDeploymentCheck" | grep -q "could not be found"; then
         deploymentType="bicep"
         echo "Deploying Synapse Environment. This will take several minutes..."
-        az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion} --only-show-errors
+        execBicep=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion} --only-show-errors)
     else
         deploymentType="bicep"
     fi
 fi
 
 # Let's double check that the Bicep deployment was actually successful before proceeding with Part 2
-bicepDeploymentCheck=$(az deployment group show --resource-group ${resourceGroup} --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
+bicepDeploymentCheck=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
 if [ "$deploymentType" == "bicep" ] && [ "$bicepDeploymentCheck" != "Succeeded" ]; then
     echo "ERROR: It looks like a Bicep deployment was attempted, but failed."
     exit 1;
@@ -97,13 +97,13 @@ fi
 
 # Get the output variables from the Bicep deployment
 if [ "$deploymentType" == "bicep" ]; then
-    synapseAnalyticsWorkspaceName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_analytics_workspace_name.value --output tsv 2>&1)
-    synapseAnalyticsSQLPoolName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_pool_name.value --output tsv 2>&1)
-    synapseAnalyticsSQLAdmin=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login.value --output tsv 2>&1)
-    synapseAnalyticsSQLAdminPassword=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.synapse_sql_administrator_login_password.value --output tsv 2>&1)
-    datalakeName=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_name.value --output tsv 2>&1)
-    datalakeKey=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.datalake_key.value --output tsv 2>&1)
-    privateEndpointsEnabled=$(az deployment group show --resource-group ${resourceGroup} --name PoC --query properties.outputs.private_endpoints_enabled.value --output tsv 2>&1)
+    synapseAnalyticsWorkspaceName=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_analytics_workspace_name.value --output tsv 2>&1)
+    synapseAnalyticsSQLPoolName=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_sql_pool_name.value --output tsv 2>&1)
+    synapseAnalyticsSQLAdmin=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_sql_administrator_login.value --output tsv 2>&1)
+    synapseAnalyticsSQLAdminPassword=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_sql_administrator_login_password.value --output tsv 2>&1)
+    datalakeName=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.datalake_name.value --output tsv 2>&1)
+    datalakeKey=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.datalake_key.value --output tsv 2>&1)
+    privateEndpointsEnabled=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.private_endpoints_enabled.value --output tsv 2>&1)
 fi
 
 echo "Deployment Type: ${deploymentType}"

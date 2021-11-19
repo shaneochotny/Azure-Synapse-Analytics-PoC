@@ -6,7 +6,7 @@
       "value": "eastus"  
     },
     "resource_group_name": {
-      "value": "PoC-Synapse-Analytics-V2"
+      "value": "PoC-Synapse-Analytics"
     },
     "synapse_sql_pool_name": {
       "value": "DataWarehouse" 
