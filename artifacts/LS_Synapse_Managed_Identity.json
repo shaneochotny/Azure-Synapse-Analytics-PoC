@@ -4,11 +4,11 @@
         "parameters": {
             "ServerName": {
                 "type": "string",
-                "defaultValue": "REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME.sql.azuresynapse.net"
+                "defaultValue": ""
             },
             "DatabaseName": {
                 "type": "string",
-                "defaultValue": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                "defaultValue": ""
             }
         },
         "annotations": [],
