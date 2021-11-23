@@ -192,7 +192,7 @@ az storage copy --only-show-errors -o none --destination https://${datalakeName}
 
 # Copy sample data for the Parquet Auto Ingestion pipeline
 sampleDataStorageSAS="?sv=2020-10-02&st=2021-11-23T05%3A00%3A00Z&se=2022-11-24T05%3A00%3A00Z&sr=c&sp=rl&sig=PMi22pEYzw1dHNrOI9gqrwcbi3AJLq%2BxWoSX9SOTLuw%3D"
-az storage copy --only-show-errors -o none --destination "https://${datalakeName}.blob.core.windows.net/data/Sample/" --source "https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/${sampleDataStorageSAS}" --recursive
+az storage copy --only-show-errors -o none --destination "https://${datalakeName}.blob.core.windows.net/data/Sample/" --source "https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/${sampleDataStorageSAS}" --recursive > /dev/null 2>&1
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json
