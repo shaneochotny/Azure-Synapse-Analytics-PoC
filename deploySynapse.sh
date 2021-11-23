@@ -72,7 +72,10 @@ if echo "$bicepDeploymentCheck" | grep -q "DeploymentNotFound"; then
         # There was no Bicep or Terraform deployment so we're taking the easy button approach and deploying the Synapse
         # environment on behalf of the user via Terraform.
 
+        echo "Deploying Synapse Analytics environment. This will take several minutes..."
+
         # Terraform init and validation
+        echo "Executing 'terraform -chdir=Terraform init'"
         terraformInit=$(terraform -chdir=Terraform init 2>&1)
         if ! echo "$terraformInit" | grep -q "Terraform has been successfully initialized!"; then
             echo "ERROR: Failed to perform 'terraform -chdir=Terraform init'"
@@ -80,6 +83,7 @@ if echo "$bicepDeploymentCheck" | grep -q "DeploymentNotFound"; then
         fi
 
         # Terraform plan and validation
+        echo "Executing 'terraform -chdir=Terraform plan'"
         terraformPlan=$(terraform -chdir=Terraform plan)
         if echo "$terraformPlan" | grep -q "Error:"; then
             echo "ERROR: Failed to perform 'terraform -chdir=Terraform plan'"
@@ -87,6 +91,7 @@ if echo "$bicepDeploymentCheck" | grep -q "DeploymentNotFound"; then
         fi
 
         # Terraform apply and validation
+        echo "Executing 'terraform -chdir=Terraform apply'"
         terraformApply=$(terraform -chdir=Terraform apply -auto-approve)
         if echo "$terraformApply" | grep -q "Apply complete!"; then
             deploymentType="terraform"
