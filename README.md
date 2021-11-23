@@ -38,7 +38,7 @@ You can manually configure the Terraform parameters and update default settings 
 @Azure:~$ code Terraform/terraform.tfvars
 @Azure:~$ terraform -chdir=Terraform init
 @Azure:~$ terraform -chdir=Terraform plan
-@Azure:~$ terraform -chdir=Terraform deploy
+@Azure:~$ terraform -chdir=Terraform apply
 @Azure:~$ bash deploySynapse.sh 
 ```
 
