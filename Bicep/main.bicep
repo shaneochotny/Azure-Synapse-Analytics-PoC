@@ -56,7 +56,7 @@ param private_endpoint_virtual_network_subnet string
 
 // Add a random suffix to ensure global uniqueness among the resources created
 //   Bicep: https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/bicep-functions-string#uniquestring
-var suffix = '${substring(uniqueString(subscription().subscriptionId), 0, 3)}'
+var suffix = '${substring(uniqueString(subscription().subscriptionId, deployment().name), 0, 3)}'
 
 // Create the Resource Group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-01-01' = {

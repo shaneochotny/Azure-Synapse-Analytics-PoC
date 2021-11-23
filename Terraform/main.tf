@@ -348,12 +348,6 @@ resource "azurerm_synapse_workspace" "synapsews" {
     tenant_id = data.azurerm_client_config.current.tenant_id
   }
 
-  sql_aad_admin {
-    login     = var.synapse_azure_ad_admin_upn
-    object_id = data.azuread_user.synapse_azure_ad_admin_object_id.id
-    tenant_id = data.azurerm_client_config.current.tenant_id
-  }
-
   depends_on = [ azurerm_storage_account.datalake ]
 }
 

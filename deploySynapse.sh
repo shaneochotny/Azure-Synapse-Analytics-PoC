@@ -85,14 +85,14 @@ fi
 
 # Get the output variables from the Terraform deployment
 if [ "$deploymentType" == "terraform" ]; then
-    resourceGroup=$(terraform output -raw synapse_analytics_workspace_resource_group 2>&1)
-    synapseAnalyticsWorkspaceName=$(terraform output -raw synapse_analytics_workspace_name 2>&1)
-    synapseAnalyticsSQLPoolName=$(terraform output -raw synapse_sql_pool_name 2>&1)
-    synapseAnalyticsSQLAdmin=$(terraform output -raw synapse_sql_administrator_login 2>&1)
-    synapseAnalyticsSQLAdminPassword=$(terraform output -raw synapse_sql_administrator_login_password 2>&1)
-    datalakeName=$(terraform output -raw datalake_name 2>&1)
-    datalakeKey=$(terraform output -raw datalake_key 2>&1)
-    privateEndpointsEnabled=$(terraform output -raw private_endpoints_enabled 2>&1)
+    resourceGroup=$(terraform output -state=Terraform/terraform.tfstate -raw synapse_analytics_workspace_resource_group 2>&1)
+    synapseAnalyticsWorkspaceName=$(terraform output -state=Terraform/terraform.tfstate -raw synapse_analytics_workspace_name 2>&1)
+    synapseAnalyticsSQLPoolName=$(terraform output -state=Terraform/terraform.tfstate -raw synapse_sql_pool_name 2>&1)
+    synapseAnalyticsSQLAdmin=$(terraform output -state=Terraform/terraform.tfstate -raw synapse_sql_administrator_login 2>&1)
+    synapseAnalyticsSQLAdminPassword=$(terraform output -state=Terraform/terraform.tfstate -raw synapse_sql_administrator_login_password 2>&1)
+    datalakeName=$(terraform output -state=Terraform/terraform.tfstate -raw datalake_name 2>&1)
+    datalakeKey=$(terraform output -state=Terraform/terraform.tfstate -raw datalake_key 2>&1)
+    privateEndpointsEnabled=$(terraform output -state=Terraform/terraform.tfstate -raw private_endpoints_enabled 2>&1)
 fi
 
 # Get the output variables from the Bicep deployment
