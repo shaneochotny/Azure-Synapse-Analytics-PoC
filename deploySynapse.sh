@@ -191,8 +191,8 @@ sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingest
 az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/ --source artifacts/Parquet_Auto_Ingestion_Metadata.csv > /dev/null 2>&1
 
 # Copy sample data for the Parquet Auto Ingestion pipeline
-az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/Sample/Bing_COVID19/ --source https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/bing_covid-19_data/latest/bing_covid-19_data.parquet > /dev/null 2>&1
-az storage copy --only-show-errors -o none --destination https://${datalakeName}.blob.core.windows.net/data/Sample/Public_Holidays/ --source https://azureopendatastorage.blob.core.windows.net/holidaydatacontainer/Processed/* > /dev/null 2>&1
+sampleDataStorageSAS="?sv=2020-10-02&st=2021-11-23T05%3A00%3A00Z&se=2022-11-24T05%3A00%3A00Z&sr=c&sp=rl&sig=PMi22pEYzw1dHNrOI9gqrwcbi3AJLq%2BxWoSX9SOTLuw%3D"
+az storage copy --only-show-errors -o none --destination "https://${datalakeName}.blob.core.windows.net/data/Sample/" --source "https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/${sampleDataStorageSAS}" --recursive
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json
