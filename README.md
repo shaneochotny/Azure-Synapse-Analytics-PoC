@@ -30,6 +30,18 @@ You can manually configure the Bicep parameters and update default settings such
 @Azure:~$ bash deploySynapse.sh 
 ```
 
+### Advanced Deployment: Terraform
+You can manually configure the Terraform parameters and update default settings such as the Azure region, database name, credentials, and private endpoint integration. The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
+```
+@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+@Azure:~$ cd Azure-Synapse-Analytics-PoC
+@Azure:~$ code Terraform/terraform.tfvars
+@Azure:~$ terraform -chdir=Terraform init
+@Azure:~$ terraform -chdir=Terraform plan
+@Azure:~$ terraform -chdir=Terraform deploy
+@Azure:~$ bash deploySynapse.sh 
+```
+
 # What's Deployed
 
 ### Azure Synapse Analytics Workspace
