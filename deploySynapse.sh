@@ -54,29 +54,47 @@ azureUsernameObjectId=$(az ad user show --id $azureUsername --query objectId --o
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_UPN/${azureUsername}/g" Terraform/terraform.tfvars
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" Bicep/main.parameters.json
 
-# See if a Terraform deployment was completed
-if [ -f "Terraform/terraform.tfstate" ]; then
-    deploymentType="terraform"
-else
-    azureRegion=$(jq -r .parameters.azure_region.value Bicep/main.parameters.json 2>&1)
-    resourceGroup=$(jq -r .parameters.resource_group_name.value Bicep/main.parameters.json 2>&1)
-    # See if a Bicep deployment was completed. If not, assume we're taking the easy button approach and deploying the Synapse
-    # environment on behalf of the user via Bicep.
-    bicepDeploymentCheck=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
-    if echo "$bicepDeploymentCheck" | grep -q "could not be found"; then
-        deploymentType="bicep"
-        echo "Deploying Synapse Environment. This will take several minutes..."
-        execBicep=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location ${azureRegion} --only-show-errors)
-    else
-        deploymentType="bicep"
-    fi
-fi
-
-# Let's double check that the Bicep deployment was actually successful before proceeding with Part 2
+# Check if there was a Bicep deployment
 bicepDeploymentCheck=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.provisioningState --output tsv 2>&1)
-if [ "$deploymentType" == "bicep" ] && [ "$bicepDeploymentCheck" != "Succeeded" ]; then
+if [ "$bicepDeploymentCheck" == "Succeeded" ]; then
+    deploymentType="bicep"
+elif [ "$bicepDeploymentCheck" == "Failed" ] || [ "$bicepDeploymentCheck" == "Canceled" ]; then
     echo "ERROR: It looks like a Bicep deployment was attempted, but failed."
     exit 1;
+fi
+
+# Check for Terraform if the deployment wasn't completed by Bicep
+if echo "$bicepDeploymentCheck" | grep -q "DeploymentNotFound"; then
+    # Check to see if Terraform has already been run
+    if [ -f "Terraform/terraform.tfstate" ]; then
+        deploymentType="terraform"
+    else
+        # There was no Bicep or Terraform deployment so we're taking the easy button approach and deploying the Synapse
+        # environment on behalf of the user via Terraform.
+
+        # Terraform init and validation
+        terraformInit=$(terraform -chdir=Terraform init 2>&1)
+        if ! echo "$terraformInit" | grep -q "Terraform has been successfully initialized!"; then
+            echo "ERROR: Failed to perform 'terraform -chdir=Terraform init'"
+            exit 1;
+        fi
+
+        # Terraform plan and validation
+        terraformPlan=$(terraform -chdir=Terraform plan)
+        if echo "$terraformPlan" | grep -q "Error:"; then
+            echo "ERROR: Failed to perform 'terraform -chdir=Terraform plan'"
+            exit 1;
+        fi
+
+        # Terraform apply and validation
+        terraformApply=$(terraform -chdir=Terraform apply -auto-approve)
+        if echo "$terraformApply" | grep -q "Apply complete!"; then
+            deploymentType="terraform"
+        else
+            echo "ERROR: Failed to perform 'terraform -chdir=Terraform apply'"
+            exit 1;
+        fi
+    fi
 fi
 
 #
@@ -97,6 +115,7 @@ fi
 
 # Get the output variables from the Bicep deployment
 if [ "$deploymentType" == "bicep" ]; then
+    resourceGroup=$(jq -r .parameters.resource_group_name.value Bicep/main.parameters.json 2>&1)
     synapseAnalyticsWorkspaceName=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_analytics_workspace_name.value --output tsv 2>&1)
     synapseAnalyticsSQLPoolName=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_sql_pool_name.value --output tsv 2>&1)
     synapseAnalyticsSQLAdmin=$(az deployment sub show --name Azure-Synapse-Analytics-PoC --query properties.outputs.synapse_sql_administrator_login.value --output tsv 2>&1)
