@@ -140,7 +140,7 @@ echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
 echo "Data Lake Name: ${datalakeName}"
 
 # If Private Endpoints are enabled, temporarily disable the firewalls so we can copy files and perform additional configuration
-if echo "$privateEndpointsEnabled" | grep -q "true"; then
+if [ "$privateEndpointsEnabled" == "true" ]; then
     az storage account update --name ${datalakeName} --resource-group ${resourceGroup} --default-action Allow --only-show-errors -o none
     az synapse workspace firewall-rule create --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors -o none
 fi
@@ -206,7 +206,7 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
-if echo "$privateEndpointsEnabled" | grep -q "true"; then
+if [ "$privateEndpointsEnabled" == "true" ]; then
     echo "Restoring firewall rules..."
     az storage account update --name ${datalakeName} --resource-group ${resourceGroup} --default-action Deny --only-show-errors -o none
     az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
