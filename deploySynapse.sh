@@ -209,6 +209,7 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 if [ "$privateEndpointsEnabled" == "true" ]; then
     echo "Restoring firewall rules..."
     az storage account update --name ${datalakeName} --resource-group ${resourceGroup} --default-action Deny --only-show-errors -o none
+    az resource update --name pocsynapseanalytics-7no --resource-group PoC-Synapse-Analytics-V2 --resource-type Microsoft.Synapse/workspaces --set Properties.publicNetworkAccess="Disabled" --only-show-errors -o none
     az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --only-show-errors -o none --yes
 fi
 
