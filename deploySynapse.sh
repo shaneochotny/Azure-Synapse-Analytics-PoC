@@ -150,6 +150,10 @@ fi
 echo "Enabling Result Set Caching..." | tee -a deploySynapse.log
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET RESULT_SET_CACHING ON;" >> deploySynapse.log 2>&1
 
+# Enable Result Set Cache
+echo "Enabling the Query Store..." | tee -a deploySynapse.log
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET QUERY_STORE ON;" >> deploySynapse.log 2>&1
+
 echo "Creating the Auto Pause and Resume pipeline..." | tee -a deploySynapse.log
 
 # Copy the Auto_Pause_and_Resume Pipeline template and update the variables
