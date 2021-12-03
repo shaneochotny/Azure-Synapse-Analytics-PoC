@@ -1,4 +1,4 @@
-# Azure-Synapse-Analytics-PoC
+# Azure Synapse Analytics PoC Accelerator
 
 ![alt tag](https://raw.githubusercontent.com/shaneochotny/Azure-Synapse-Analytics-PoC\/main/Images/Synapse-Analytics-PoC-Architecture.gif)
 

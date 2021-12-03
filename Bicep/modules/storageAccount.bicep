@@ -15,11 +15,13 @@ param logAnalyticsId string
 param enable_private_endpoints bool
 param private_endpoint_virtual_network string
 param private_endpoint_virtual_network_subnet string
+param private_endpoint_virtual_network_resource_group string
+param private_endpoint_private_dns_zone_resource_group string
 
 // Azure Data Lake Storage Gen2: Storage for the Synapse Workspace configuration data and test data
 //   Azure: https://docs.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.storage/storageaccounts
-resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = {
+resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' = {
   name: 'pocsynapseadls${suffix}'
   location: azure_region
   kind: 'StorageV2'
@@ -28,6 +30,17 @@ resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = 
   }
   properties: {
     isHnsEnabled: true
+    networkAcls: {
+      bypass: (enable_private_endpoints) ? 'None' : 'AzureServices'
+      defaultAction: (enable_private_endpoints) ? 'Deny' : 'Allow'
+      resourceAccessRules: [
+        {
+          resourceId: '/subscriptions/${subscription().subscriptionId}/resourcegroups/${resourceGroup().name}/providers/Microsoft.Synapse/workspaces/*'
+          tenantId: subscription().tenantId
+        }
+      ]
+    }
+    publicNetworkAccess: (enable_private_endpoints) ? 'Disabled' : 'Enabled'
   }
 }
 
@@ -105,6 +118,114 @@ resource synapseStorageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-0
       {
         category: 'Transaction'
         enabled: true
+      }
+    ]
+  }
+}
+
+// Reference to the existing Virtual Network if Private Endpoints we're enabling Private Endpoints
+resource existingVirtualNetwork 'Microsoft.Network/virtualNetworks@2020-08-01' existing = if (enable_private_endpoints) {
+  name: private_endpoint_virtual_network
+  scope: resourceGroup(private_endpoint_virtual_network_resource_group)
+}
+
+// Reference to the existing Virtual Network Subnet to create the Private Endpoints if we're enabling them
+resource existingVirtualNetworkSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-04-01' existing = if (enable_private_endpoints) {
+  parent: existingVirtualNetwork
+  name: private_endpoint_virtual_network_subnet
+}
+
+// Azure Data Lake Storage Gen2 Blob Private Endpoint
+//   Azure: https://docs.microsoft.com/en-us/azure/storage/common/storage-private-endpoints
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints
+resource synapseStorageAccountBlobPrivateEndpoint 'Microsoft.Network/privateEndpoints@2021-03-01' = if (enable_private_endpoints) {
+  name: 'pocsynapsestorage-blob-endpoint'
+  location: azure_region
+  properties: {
+    subnet: {
+      id: existingVirtualNetworkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pocsynapsestorage-blob-privateserviceconnection'
+        properties: {
+          privateLinkServiceId: synapseStorageAccount.id
+          groupIds: [
+            'blob'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Azure Data Lake Storage Gen2 DFS Private Endpoint
+//   Azure: https://docs.microsoft.com/en-us/azure/storage/common/storage-private-endpoints
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints
+resource synapseStorageAccountDfsPrivateEndpoint 'Microsoft.Network/privateEndpoints@2021-03-01' = if (enable_private_endpoints) {
+  name: 'pocsynapsestorage-dfs-endpoint'
+  location: azure_region
+  properties: {
+    subnet: {
+      id: existingVirtualNetworkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pocsynapsestorage-dfs-privateserviceconnection'
+        properties: {
+          privateLinkServiceId: synapseStorageAccount.id
+          groupIds: [
+            'dfs'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Reference to the existing Storage Blob Private DNS Zone if Private Endpoints are enabled so we can auto-register
+resource privateDnsZoneBlob 'Microsoft.Network/privateDnsZones@2020-01-01' existing = if (enable_private_endpoints) {
+  name: 'privatelink.blob.${environment().suffixes.storage}'
+  scope: resourceGroup(private_endpoint_private_dns_zone_resource_group)
+}
+
+// Reference to the existing Storage DFS Private DNS Zone if Private Endpoints are enabled so we can auto-register
+resource privateDnsZoneDfs 'Microsoft.Network/privateDnsZones@2020-01-01' existing = if (enable_private_endpoints) {
+  name: 'privatelink.dfs.${environment().suffixes.storage}'
+  scope: resourceGroup(private_endpoint_private_dns_zone_resource_group)
+}
+
+// Azure Data Lake Storage Gen2 Blob Private Endpoint DNS Registration
+//   Azure: 
+//   Bicep: 
+resource blobPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-03-01' = if (enable_private_endpoints) {
+  parent: synapseStorageAccountBlobPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'default'
+        properties: {
+          privateDnsZoneId: privateDnsZoneBlob.id
+        }
+      }
+    ]
+  }
+}
+
+// Azure Data Lake Storage Gen2 DFS Private Endpoint DNS Registration
+//   Azure: 
+//   Bicep: 
+resource dfsPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-03-01' = if (enable_private_endpoints) {
+  parent: synapseStorageAccountDfsPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'default'
+        properties: {
+          privateDnsZoneId: privateDnsZoneDfs.id
+        }
       }
     ]
   }

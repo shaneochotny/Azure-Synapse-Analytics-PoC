@@ -18,7 +18,7 @@
       "value": "Pass@word123" 
     },
     "synapse_azure_ad_admin_object_id": {
-      "value": "REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID" 
+      "value": "REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID"
     },
     "enable_private_endpoints": {
       "value": false
@@ -27,8 +27,13 @@
       "value": "" 
     },
     "private_endpoint_virtual_network_subnet": {
-      "value": "" 
+      "value": ""
+    },
+    "private_endpoint_virtual_network_resource_group": {
+      "value": ""
+    },
+    "private_endpoint_private_dns_zone_resource_group": {
+      "value": ""
     }
-
   }
 }

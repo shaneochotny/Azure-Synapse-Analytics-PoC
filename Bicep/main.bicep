@@ -54,6 +54,12 @@ param private_endpoint_virtual_network string
 @description('Name of the Subnet within the Virtual Network where you want to create the Private Endpoints. (i.e. private-endpoint-subnet)')
 param private_endpoint_virtual_network_subnet string
 
+@description('Name of the Resource Group that contains the Virtual Network where you want to create the Private Endpoints. (i.e. prod-network)')
+param private_endpoint_virtual_network_resource_group string
+
+@description('Name of the Resource Group that contains the Private DNS Zones for Storage and Synapse if Private Endpoints are enabled. (i.e. prod-network)')
+param private_endpoint_private_dns_zone_resource_group string
+
 // Add a random suffix to ensure global uniqueness among the resources created
 //   Bicep: https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/bicep-functions-string#uniquestring
 var suffix = '${substring(uniqueString(subscription().subscriptionId, deployment().name), 0, 3)}'
@@ -91,6 +97,8 @@ module synapseStorageAccount 'modules/storageAccount.bicep' = {
     enable_private_endpoints: enable_private_endpoints
     private_endpoint_virtual_network: private_endpoint_virtual_network
     private_endpoint_virtual_network_subnet: private_endpoint_virtual_network_subnet
+    private_endpoint_virtual_network_resource_group: private_endpoint_virtual_network_resource_group
+    private_endpoint_private_dns_zone_resource_group: private_endpoint_private_dns_zone_resource_group
   }
 
   dependsOn: [
@@ -113,6 +121,8 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     enable_private_endpoints: enable_private_endpoints
     private_endpoint_virtual_network: private_endpoint_virtual_network
     private_endpoint_virtual_network_subnet: private_endpoint_virtual_network_subnet
+    private_endpoint_virtual_network_resource_group: private_endpoint_virtual_network_resource_group
+    private_endpoint_private_dns_zone_resource_group: private_endpoint_private_dns_zone_resource_group
   }
 
   dependsOn: [

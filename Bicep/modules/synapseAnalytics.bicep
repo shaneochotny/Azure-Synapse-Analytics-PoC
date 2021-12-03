@@ -18,6 +18,8 @@ param logAnalyticsId string
 param enable_private_endpoints bool
 param private_endpoint_virtual_network string
 param private_endpoint_virtual_network_subnet string
+param private_endpoint_virtual_network_resource_group string
+param private_endpoint_private_dns_zone_resource_group string
 
 // Synapse Workspace
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/overview-what-is
@@ -30,7 +32,7 @@ resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
   }
 
   properties: {
-    publicNetworkAccess: 'Enabled'
+    //publicNetworkAccess: (enable_private_endpoints) ? 'Disabled' : 'Enabled'
     managedVirtualNetwork: 'default'
     defaultDataLakeStorage: {
       accountUrl: synapseStorageAccountDFS
@@ -60,28 +62,6 @@ resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignm
   dependsOn: [
     synapseWorkspace
   ]
-}
-
-// Synapse Workspace Firewall: Allow authenticated access from anywhere if Private Endpoints are disabled
-//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
-//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
-resource synapseFirewallAllowAzureServices 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = {
-  name: '${synapseWorkspace.name}/AllowAllWindowsAzureIps'
-  properties: {
-    endIpAddress: '0.0.0.0'
-    startIpAddress: '0.0.0.0'
-  }
-}
-
-// Synapse Workspace Firewall: Allow authenticated access from anywhere if Private Endpoints are disabled
-//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
-//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
-resource synapseFirewallAllowAll 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = {
-  name: '${synapseWorkspace.name}/AllowAll'
-  properties: {
-    endIpAddress: '255.255.255.255'
-    startIpAddress: '0.0.0.0'
-  }
 }
 
 // Diagnostic Logs for Synapse
@@ -191,6 +171,178 @@ resource synapseSQLPoolDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-0
   dependsOn: [
     synapseSQLPool
   ]
+}
+
+// Synapse Workspace Firewall: Allow authenticated access from anywhere if Private Endpoints are disabled
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
+resource synapseFirewallAllowAzureServices 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = if (!enable_private_endpoints) {
+  name: '${synapseWorkspace.name}/AllowAllWindowsAzureIps'
+  properties: {
+    endIpAddress: '0.0.0.0'
+    startIpAddress: '0.0.0.0'
+  }
+}
+
+// Synapse Workspace Firewall: Allow authenticated access from anywhere if Private Endpoints are disabled
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
+resource synapseFirewallAllowAll 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = if (!enable_private_endpoints) {
+  name: '${synapseWorkspace.name}/AllowAll'
+  properties: {
+    endIpAddress: '255.255.255.255'
+    startIpAddress: '0.0.0.0'
+  }
+}
+
+// Reference to the existing Virtual Network if Private Endpoints we're enabling Private Endpoints
+resource existingVirtualNetwork 'Microsoft.Network/virtualNetworks@2020-08-01' existing = if (enable_private_endpoints) {
+  name: private_endpoint_virtual_network
+  scope: resourceGroup(private_endpoint_virtual_network_resource_group)
+}
+
+// Reference to the existing Virtual Network Subnet to create the Private Endpoints if we're enabling them
+resource existingVirtualNetworkSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-04-01' existing = if (enable_private_endpoints) {
+  parent: existingVirtualNetwork
+  name: private_endpoint_virtual_network_subnet
+}
+
+// Create a Private Endpoint for Synapse Dedicated SQL Pools
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-connect-to-workspace-with-private-links
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints
+resource synapseWorkspaceSqlPrivateEndpoint 'Microsoft.Network/privateEndpoints@2021-03-01' = if (enable_private_endpoints) {
+  name: 'pocsynapseanalytics-sql-endpoint'
+  location: azure_region
+  properties: {
+    subnet: {
+      id: existingVirtualNetworkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pocsynapseanalytics-sql-privateserviceconnection'
+        properties: {
+          privateLinkServiceId: synapseWorkspace.id
+          groupIds: [
+            'sql'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Create a Private Endpoint for Synapse Serverless SQL
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-connect-to-workspace-with-private-links
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints
+resource synapseWorkspaceServerlessSqlPrivateEndpoint 'Microsoft.Network/privateEndpoints@2021-03-01' = if (enable_private_endpoints) {
+  name: 'pocsynapseanalytics-sqlondemand-endpoint'
+  location: azure_region
+  properties: {
+    subnet: {
+      id: existingVirtualNetworkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pocsynapseanalytics-sqlondemand-privateserviceconnection'
+        properties: {
+          privateLinkServiceId: synapseWorkspace.id
+          groupIds: [
+            'sqlondemand'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Create a Private Endpoint for Synapse Workspace
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-connect-to-workspace-with-private-links
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints
+resource synapseWorkspaceDevPrivateEndpoint 'Microsoft.Network/privateEndpoints@2021-03-01' = if (enable_private_endpoints) {
+  name: 'pocsynapseanalytics-dev-endpoint'
+  location: azure_region
+  properties: {
+    subnet: {
+      id: existingVirtualNetworkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pocsynapseanalytics-dev-privateserviceconnection'
+        properties: {
+          privateLinkServiceId: synapseWorkspace.id
+          groupIds: [
+            'dev'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Reference to the existing Synapse Dedicated SQL Private DNS Zone if Private Endpoints are enabled so we can auto-register
+resource privateDnsZoneSynapseSql 'Microsoft.Network/privateDnsZones@2020-01-01' existing = if (enable_private_endpoints) {
+  name: 'privatelink.sql.azuresynapse.net'
+  scope: resourceGroup(private_endpoint_private_dns_zone_resource_group)
+}
+
+//  Synapse Dedicated SQL Private Endpoint DNS Registration
+//   Azure: https://docs.microsoft.com/en-us/azure/private-link/private-endpoint-dns
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints/privatednszonegroups
+resource synapseSqlPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-03-01' = if (enable_private_endpoints) {
+  parent: synapseWorkspaceSqlPrivateEndpoint
+  name: 'synapseSql'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'default'
+        properties: {
+          privateDnsZoneId: privateDnsZoneSynapseSql.id
+        }
+      }
+    ]
+  }
+}
+
+//  Synapse Serverless SQL Private Endpoint DNS Registration
+//   Azure: https://docs.microsoft.com/en-us/azure/private-link/private-endpoint-dns
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints/privatednszonegroups
+resource synapseServerlessSqlPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-03-01' = if (enable_private_endpoints) {
+  parent: synapseWorkspaceServerlessSqlPrivateEndpoint
+  name: 'synapseSqlServerless'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'default'
+        properties: {
+          privateDnsZoneId: privateDnsZoneSynapseSql.id
+        }
+      }
+    ]
+  }
+}
+
+// Reference to the existing Synapse Workspace Dev Private DNS Zone if Private Endpoints are enabled so we can auto-register
+resource privateDnsZoneSynapseDev 'Microsoft.Network/privateDnsZones@2020-01-01' existing = if (enable_private_endpoints) {
+  name: 'privatelink.dev.azuresynapse.net'
+  scope: resourceGroup(private_endpoint_private_dns_zone_resource_group)
+}
+
+// Synapse Workspace Private Endpoint DNS Registration
+//   Azure: https://docs.microsoft.com/en-us/azure/private-link/private-endpoint-dns
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/privateendpoints/privatednszonegroups
+resource synapseDevPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-03-01' = if (enable_private_endpoints) {
+  parent: synapseWorkspaceDevPrivateEndpoint
+  name: 'synapseDev'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'default'
+        properties: {
+          privateDnsZoneId: privateDnsZoneSynapseDev.id
+        }
+      }
+    ]
+  }
 }
 
 // Outputs for reference in the Post-Deployment Configuration
