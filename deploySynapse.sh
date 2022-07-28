@@ -215,6 +215,7 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
 # Create Sample SQL Scripts
+echo "Creating Sample SQL Scripts ..." | tee -a deploySynapse.log
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/row_level_security.sql --name "01 Row Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/column_level_security.sql --name "02 Column Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/dynamic_data_masking.sql --name "03 Dynamic Data Masking" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
