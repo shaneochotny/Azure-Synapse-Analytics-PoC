@@ -24,10 +24,10 @@ WHERE is_masked = 1
     AND tbl.name = 'DimCustomer';
 
 -- Mask 'EmailAddress' and 'BirthDate' columns of Customer table
-ALTER TABLE Sales.DimCustomer
+ALTER TABLE Sample.DimCustomer
 ALTER COLUMN EmailAddress ADD MASKED WITH (FUNCTION = 'email()');
 GO
-ALTER TABLE Sales.DimCustomer
+ALTER TABLE Sample.DimCustomer
 ALTER COLUMN BirthDate ADD MASKED WITH (FUNCTION = 'default()');
 GO
 

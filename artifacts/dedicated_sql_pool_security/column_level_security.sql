@@ -12,7 +12,7 @@ CREATE USER DataAnalystGlobal WITHOUT LOGIN;
 REVOKE SELECT ON Sample.DimCustomer FROM DataAnalystSFO, DataAnalystGlobal;
 
 -- Allow DataAnalystGlobal access to all columns on Sample.DimCustomer Table.
-GRANT SELECT ON Sample.DimCustomer TO DataAnalystGlobal, DataAnalystSFO;
+GRANT SELECT ON Sample.DimCustomer TO DataAnalystGlobal;
 
 -- Allow DataAnalystSFO access to a subset of columns on Sample.DimCustomer Table.
 GRANT SELECT ON Sample.DimCustomer(
@@ -29,7 +29,7 @@ select TOP 100 * from Sample.DimCustomer;
 
 -- Check whether DataAnalystSFO has select access to the other columns
 EXECUTE AS USER ='DataAnalystSFO';
-select
+select TOP 100
 [CustomerKey],[GeographyKey],[CustomerAlternateKey],[Title],[FirstName],[MiddleName],[LastName],[NameStyle]
 --,[BirthDate],[Phone]
 ,[MaritalStatus],[Suffix],[Gender],[EmailAddress],[YearlyIncome],[TotalChildren],[NumberChildrenAtHome],[EnglishEducation]
