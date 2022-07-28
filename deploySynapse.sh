@@ -214,6 +214,9 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 # Create the Views over the external data
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
 
+# Create Sample SQL Scripts
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/row_level_security.sql --name "01 Row Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName} --recursive >> deploySynapse.log 2>&1
+
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if [ "$privateEndpointsEnabled" == "true" ]; then
     echo "Restoring firewall rules..." | tee -a deploySynapse.log
