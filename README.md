@@ -68,8 +68,8 @@ You can manually configure the Terraform parameters and update default settings 
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
 
 # To Do
-- Synapse Saprk Pool deployment
-- Syanpse Data Explorer Pool deployment 
+- Synapse Spark Pool deployment
+- Synapse Data Explorer Pool deployment 
 - Purview Deployment and Configuration
 - Azure ML Services Deployment and Configuration
 - Cognitive Services Deployment and Configuration
