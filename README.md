@@ -46,6 +46,10 @@ You can manually configure the Terraform parameters and update default settings 
 
 ### Azure Synapse Analytics Workspace
 - DW1000 Dedicated SQL Pool
+- Example scripts for configuring:
+    - Row Level Security
+    - Column Level Security
+    - Dynamic Data Masking
 
 ### Azure Data Lake Storage Gen2
 - <b>config</b> container for Azure Synapse Analytics Workspace
@@ -64,5 +68,8 @@ You can manually configure the Terraform parameters and update default settings 
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
 
 # To Do
-- Example script for configuring Row Level Security
-- Example script for configuring Dynamic Data Masking
+- Synapse Saprk Pool deployment
+- Syanpse Data Explorer Pool deployment 
+- Purview Deployment and Configuration
+- Azure ML Services Deployment and Configuration
+- Cognitive Services Deployment and Configuration
