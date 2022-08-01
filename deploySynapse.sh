@@ -228,7 +228,7 @@ if [ "$privateEndpointsEnabled" == "true" ]; then
     az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --yes >> deploySynapse.log 2>&1
 fi
 # Update Synapse Dedicated SQL Pool JMeter Test Plan file
-echo "Creating Sample SQL Scripts ..." | tee -a deploySynapse.log
+echo "Updating JMeter Test plan ..." | tee -a deploySynapse.log
 sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
 
