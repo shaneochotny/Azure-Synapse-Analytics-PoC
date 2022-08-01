@@ -72,7 +72,7 @@ You can manually configure the Terraform parameters and update default settings 
 
 # To Do
 - Synapse Spark Pool deployment
-- Synapse Data Explorer Pool deployment 
+- Synapse Data Explorer Pool deployment
 - Purview Deployment and Configuration
 - Azure ML Services Deployment and Configuration
 - Cognitive Services Deployment and Configuration
