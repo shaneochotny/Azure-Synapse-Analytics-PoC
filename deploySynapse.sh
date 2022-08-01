@@ -219,6 +219,7 @@ echo "Creating Sample SQL Scripts ..." | tee -a deploySynapse.log
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/row_level_security.sql --name "01 Row Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/column_level_security.sql --name "02 Column Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/dynamic_data_masking.sql --name "03 Dynamic Data Masking" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/materialized_views.sql --name "01 Materialized View Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if [ "$privateEndpointsEnabled" == "true" ]; then
@@ -227,6 +228,11 @@ if [ "$privateEndpointsEnabled" == "true" ]; then
     az synapse workspace firewall-rule delete --name AllowAll --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --yes >> deploySynapse.log 2>&1
     az synapse workspace firewall-rule delete --name AllowAllWindowsAzureIps --resource-group ${resourceGroup} --workspace-name ${synapseAnalyticsWorkspaceName} --yes >> deploySynapse.log 2>&1
 fi
+
+# Update Synapse Dedicated SQL Pool JMeter Test Plan file
+echo "Updating JMeter Test plan ..." | tee -a deploySynapse.log
+sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
 
 echo "Deployment complete!" | tee -a deploySynapse.log
 touch deploySynapse.complete

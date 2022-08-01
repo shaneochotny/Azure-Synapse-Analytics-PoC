@@ -67,9 +67,12 @@ You can manually configure the Terraform parameters and update default settings 
 - Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
 
+# Other Files
+- You can find a Synapse_Dedicated_SQL_Pool_Test_Plan.jmx JMeter file under the artifacts folder that is configured to work with your recently deployed Synapse Environment.  
+
 # To Do
 - Synapse Spark Pool deployment
-- Synapse Data Explorer Pool deployment 
+- Synapse Data Explorer Pool deployment
 - Purview Deployment and Configuration
 - Azure ML Services Deployment and Configuration
 - Cognitive Services Deployment and Configuration
