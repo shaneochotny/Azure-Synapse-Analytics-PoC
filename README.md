@@ -50,6 +50,8 @@ You can manually configure the Terraform parameters and update default settings 
     - Row Level Security
     - Column Level Security
     - Dynamic Data Masking
+- Example notebooks for testing:
+    - Spark and Serverless Metastore integration
 
 ### Azure Data Lake Storage Gen2
 - <b>config</b> container for Azure Synapse Analytics Workspace
