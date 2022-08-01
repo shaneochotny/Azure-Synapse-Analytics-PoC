@@ -1,6 +1,6 @@
 /* Use Case: 
-    DataAnalystSFO should not have access to birthdate and phone columns
-    on the Customer table
+    Using Materialized Views in Synapse Dedicated SQL Pools
+    to improve performance.
 */
 
 -- Run the Original Query
@@ -88,6 +88,9 @@ GROUP BY [c].[CustomerKey],
          [c].[Phone],
          [d].[CalendarYear];
 
+-- Clear cache
+DBCC DROPRESULTSETCACHE; 
+
 -- Run a query referencing the materialized view
 SELECT
                   Customer_id
@@ -100,6 +103,9 @@ FROM  Sample.MVExample
   GROUP BY customer_id
          ,customer_first_name
          ,customer_last_name;
+
+-- Clear cache
+DBCC DROPRESULTSETCACHE; 
 
 -- Run a query covered by the materialized view
 SELECT [c].[CustomerKey] AS Customer_ID,
@@ -116,5 +122,5 @@ GROUP BY [c].[CustomerKey],
 
 /*
 CLEAN UP:
-DROP MATERIALIZED VIEW Sample.MVExample;
+DROP VIEW Sample.MVExample;
 */
