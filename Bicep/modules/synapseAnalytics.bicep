@@ -120,6 +120,17 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
   ]
 }
 
+// Synapse Dedicated SQL Pool Geo-Backups: Disable Geo-Backups
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/backup-and-restore
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools/geobackuppolicies
+resource synapseSQLPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
+  name: 'Default'
+  parent: synapseSQLPool
+  properties: {
+    state: 'Disabled'
+  }
+}
+
 // Synapse Dedicated SQL Pool Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to pause/resume the Dedicated SQL Pool
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
