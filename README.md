@@ -14,32 +14,32 @@ depandancies than what can be configured here.
 
 ### "Easy Button" Deployment
 The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+bash deploySynapse.sh 
 ```
 
 ### Advanced Deployment: Bicep
 You can manually configure the Bicep parameters and update default settings such as the Azure region, database name, credentials, and private endpoint integration. The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ code Bicep/main.parameters.json
-@Azure:~$ az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location eastus
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+code Bicep/main.parameters.json
+az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location eastus
+bash deploySynapse.sh 
 ```
 
 ### Advanced Deployment: Terraform
 You can manually configure the Terraform parameters and update default settings such as the Azure region, database name, credentials, and private endpoint integration. The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ code Terraform/terraform.tfvars
-@Azure:~$ terraform -chdir=Terraform init
-@Azure:~$ terraform -chdir=Terraform plan
-@Azure:~$ terraform -chdir=Terraform apply
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+code Terraform/terraform.tfvars
+terraform -chdir=Terraform init
+terraform -chdir=Terraform plan
+terraform -chdir=Terraform apply
+bash deploySynapse.sh 
 ```
 
 # What's Deployed
