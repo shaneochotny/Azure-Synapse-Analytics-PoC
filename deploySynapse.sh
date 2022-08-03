@@ -220,6 +220,11 @@ az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/row_
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/column_level_security.sql --name "02 Column Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/dynamic_data_masking.sql --name "03 Dynamic Data Masking" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/materialized_views.sql --name "01 Materialized View Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+azcopy cp 'artifacts/dedicated_sql_pool_features/user_data.json.gz' 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> deploySynapse.log 2>&1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/dedicated_sql_pool_features/parsing_json.sql
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/parsing_json.sql --name "02 JSON Parsing Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+
+
 
 # Update Synapse Dedicated SQL Pool JMeter Test Plan file
 echo "Updating JMeter Test plan ..." | tee -a deploySynapse.log
@@ -236,7 +241,6 @@ sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceNa
 az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01. Shared Metastore" --file @"artifacts/spark_pool_features/shared_metastore_tables.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/spark_pool_features/delta_tables_process.ipynb
 az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02. Delta Lake Tables" --file @"artifacts/spark_pool_features/delta_tables_process.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
-
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if [ "$privateEndpointsEnabled" == "true" ]; then
