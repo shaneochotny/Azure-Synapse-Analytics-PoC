@@ -232,7 +232,10 @@ az synapse spark pool create --name SparkPool --workspace-name ${synapseAnalytic
 
 # Create Sample Spark Notebooks
 echo "Creating Sample Spark Notebooks ..." | tee -a deploySynapse.log
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/spark_pool_features/shared_metastore_tables.ipynb
 az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01. Shared Metastore" --file @"artifacts/spark_pool_features/shared_metastore_tables.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/spark_pool_features/delta_tables_process.ipynb
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02. Delta Lake Tables" --file @"artifacts/spark_pool_features/delta_tables_process.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
 
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.

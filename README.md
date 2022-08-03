@@ -52,6 +52,7 @@ bash deploySynapse.sh
     - Dynamic Data Masking
 - Example notebooks for testing:
     - Spark and Serverless Metastore integration
+    - Spark Delta Lake integration
 
 ### Azure Data Lake Storage Gen2
 - <b>config</b> container for Azure Synapse Analytics Workspace
@@ -73,7 +74,6 @@ bash deploySynapse.sh
 - You can find a Synapse_Dedicated_SQL_Pool_Test_Plan.jmx JMeter file under the artifacts folder that is configured to work with your recently deployed Synapse Environment.  
 
 # To Do
-- Synapse Spark Pool deployment
 - Synapse Data Explorer Pool deployment
 - Purview Deployment and Configuration
 - Azure ML Services Deployment and Configuration
