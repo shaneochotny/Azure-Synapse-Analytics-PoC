@@ -224,8 +224,6 @@ azcopy cp 'artifacts/dedicated_sql_pool_features/user_data.json.gz' 'https://'"$
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/dedicated_sql_pool_features/parsing_json.sql
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/parsing_json.sql --name "02 JSON Parsing Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 
-
-
 # Update Synapse Dedicated SQL Pool JMeter Test Plan file
 echo "Updating JMeter Test plan ..." | tee -a deploySynapse.log
 sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
@@ -233,7 +231,7 @@ sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceNa
 
 # Create Spark Pool -- Could be moved to a Terraform and Bicep scripts
 echo "Creating Spark Pool ..." | tee -a deploySynapse.log
-az synapse spark pool create --name SparkPool --workspace-name ${synapseAnalyticsWorkspaceName} --resource-group ${resourceGroup} --spark-version 3.2 --node-count 3 --node-size Medium >> deploySynapse.log 2>&1
+az synapse spark pool create --name SparkPool --workspace-name ${synapseAnalyticsWorkspaceName} --resource-group ${resourceGroup} --spark-version 3.2 --node-count 6 --node-size Medium >> deploySynapse.log 2>&1
 
 # Create Sample Spark Notebooks
 echo "Creating Sample Spark Notebooks ..." | tee -a deploySynapse.log
