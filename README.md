@@ -46,10 +46,12 @@ bash deploySynapse.sh
 
 ### Azure Synapse Analytics Workspace
 - DW1000 Dedicated SQL Pool
-- Example scripts for configuring:
+- Example scripts for configuring and using:
     - Row Level Security
     - Column Level Security
     - Dynamic Data Masking
+    - Materialized Views
+    - JSON data parsing
 - Example notebooks for testing:
     - Spark and Serverless Metastore integration
     - Spark Delta Lake integration
