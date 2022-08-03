@@ -221,7 +221,7 @@ az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/colu
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/dynamic_data_masking.sql --name "03 Dynamic Data Masking" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/materialized_views.sql --name "01 Materialized View Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 azcopy cp 'artifacts/dedicated_sql_pool_features/user_data.json.gz' 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> deploySynapse.log 2>&1
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/dedicated_sql_pool_features/parsing_json.sql
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/dedicated_sql_pool_features/parsing_json.sql
 az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/parsing_json.sql --name "02 JSON Parsing Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
 
 
@@ -237,9 +237,9 @@ az synapse spark pool create --name SparkPool --workspace-name ${synapseAnalytic
 
 # Create Sample Spark Notebooks
 echo "Creating Sample Spark Notebooks ..." | tee -a deploySynapse.log
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/spark_pool_features/shared_metastore_tables.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/spark_pool_features/shared_metastore_tables.ipynb
 az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01. Shared Metastore" --file @"artifacts/spark_pool_features/shared_metastore_tables.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/spark_pool_features/delta_tables_process.ipynb
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/spark_pool_features/delta_tables_process.ipynb
 az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02. Delta Lake Tables" --file @"artifacts/spark_pool_features/delta_tables_process.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.

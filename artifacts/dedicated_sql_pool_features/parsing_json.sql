@@ -21,9 +21,9 @@ WITH
 GO
 
 -- Then, use COPY INTO statement to load the data from the lake into SQL pool table
-COPY INTO Sample.User_Data
+COPY INTO dbo.User_Data
 (jsonData 1)
-FROM 'https://REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME.dfs.core.windows.net/data/user_data.json.gz'
+FROM 'https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/user_data.json.gz'
 WITH
 (
 		FILE_TYPE = 'CSV'
@@ -35,7 +35,7 @@ WITH
 GO
 
 -- Select to verify data loaded correctly
-SELECT TOP 100 * FROM Sample.User_Data
+SELECT TOP 100 * FROM dbo.User_Data
 GO
 
  --Use the JSON Extractor to parse the complex JSON data 
@@ -46,7 +46,7 @@ SELECT   TOP 10
        JSON_VALUE( jsonData,'$.address.streetA') AS Street1,
        JSON_VALUE( jsonData,'$.address.streetB') AS Street2,
        JSON_VALUE( jsonData,'$.address.city') AS City
-FROM Sample.[user_data] 
+FROM dbo.[user_data] 
 WHERE
     ISJSON(jsonData) > 0 
 
@@ -59,7 +59,7 @@ SELECT
        JSON_VALUE( jsonData,'$.address.streetA') AS Street1,
        JSON_VALUE( jsonData,'$.address.streetB') AS Street2,
        JSON_VALUE( jsonData,'$.address.city') AS City
-FROM Sample.[user_data] 
+FROM dbo.[user_data] 
 WHERE    
     ISJSON(jsonData) > 0  AND
     JSON_VALUE( jsonData,'$.username')='Jeffrey77'
@@ -74,7 +74,7 @@ SELECT
        JSON_VALUE( jsonData,'$.address.streetB') AS Street2,
        JSON_VALUE( jsonData,'$.address.city') AS City
        ,accountHistory.amount, accountHistory.name
-FROM Sample.[user_data]
+FROM dbo.[user_data]
     CROSS APPLY 
         OPENJSON(jsondata,'lax $.accountHistory') 
         WITH ( amount nvarchar(500) '$.amount' , name nvarchar(500) )
