@@ -1,0 +1,417 @@
+{
+    "name": "Lake Database Auto DDL",
+    "properties": {
+        "activities": [
+            {
+                "name": "Get List of Tables",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": {
+                            "value": "@concat('SELECT *\nFROM OPENROWSET\n(\n    BULK ''', pipeline().parameters.StorageAccountNameMetadata, '''\n    ,FORMAT = ''CSV''\n    ,PARSER_VERSION=''2.0''\n    ,HEADER_ROW = TRUE\n) AS r\n')",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "master"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "ForEach Table",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "Get List of Tables",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set variable - PipelineValues",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Create Log Tables If Not Exists",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('Get List of Tables').output.value",
+                        "type": "Expression"
+                    },
+                    "isSequential": false,
+                    "batchCount": 50,
+                    "activities": [
+                        {
+                            "name": "Create Staging Table DDL - Serverless",
+                            "type": "Lookup",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@replace(replace(replace(variables('SqlScript'), '{SchemaNameStaging}', item().SchemaNameTarget)\n, '{TableNameStaging}', item().TableNameTarget)\n,  '{FolderPathFull}', item().FolderPathFull) ",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": "master"
+                                    }
+                                },
+                                "firstRowOnly": true
+                            }
+                        },
+                        {
+                            "name": "Log DDL",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Create Staging Table DDL - Serverless",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat('\nDECLARE @CurrentDateTime DATETIME2(0) = GETDATE() \n\nINSERT INTO logging.ServerlessDDL VALUES \n(''', variables('PipelineValues')[0].PipelineRunId, ''' /* PipelineRunId */\n,''', pipeline().Pipeline, ''' /* PipelineName */\n,''', variables('PipelineValues')[0].PipelineStartDate, ''' /* PipelineStartDate */\n,''', variables('PipelineValues')[0].PipelineStartDateTime, ''' /* PipelineStartDateTime */\n,''', pipeline().parameters.StorageAccountNameMetadata, ''' /* StorageAccountNameMetadata */\n,''', item().FolderPathFull, ''' /* FolderPathFull */\n,''', activity('Create Staging Table DDL - Serverless').output.firstRow.SchemaName, ''' /* SchemaName */\n,''', activity('Create Staging Table DDL - Serverless').output.firstRow.TableName, ''' /* TableName */\n,''', replace(activity('Create Staging Table DDL - Serverless').output.firstRow.CreateTableDDL, '''', ''''''), ''' /* SqlCommandCreateExternalTable */\n,''', replace(activity('Create Staging Table DDL - Serverless').output.firstRow.CreateTableStatsDDL, '''', ''''''), ''' /* SqlCommandCreateExternalTableStats */\n,''', replace(activity('Create Staging Table DDL - Serverless').output.firstRow.CreateViewDDL, '''', ''''''), ''' /* SqlCommandCreateView */\n,''', replace(activity('Create Staging Table DDL - Serverless').output.firstRow.CreateViewStatsDDL, '''', ''''''), ''' /* SqlCommandCreateViewStats */\n,@CurrentDateTime /* RowInsertDateTime */\n)\n;\nSELECT 1 AS a\n;\n')",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@variables('DatabaseName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        },
+                        {
+                            "name": "Execute Create External Table DDL",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Create Staging Table DDL - Serverless",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat(\nactivity('Create Staging Table DDL - Serverless').output.firstRow.CreateTableDDL\n,'SELECT 1 AS a;'\n)",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@variables('LakeDatabaseName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        },
+                        {
+                            "name": "Execute Create Stats on External Table DDL",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Execute Create External Table DDL",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat(\nactivity('Create Staging Table DDL - Serverless').output.firstRow.CreateTableStatsDDL\n,'SELECT 1 AS a;'\n)",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@variables('LakeDatabaseName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        },
+                        {
+                            "name": "Execute Create View DDL",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Create Staging Table DDL - Serverless",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat(\nactivity('Create Staging Table DDL - Serverless').output.firstRow.CreateViewDDL\n,'SELECT 1 AS a;'\n)",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@variables('LakeDatabaseName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        },
+                        {
+                            "name": "Execute Create View Stats DDL",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Execute Create View DDL",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat(\nactivity('Create Staging Table DDL - Serverless').output.firstRow.CreateViewStatsDDL\n,'SELECT 1 AS a;'\n)",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@variables('LakeDatabaseName')",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Set variable - PipelineValues",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "PipelineValues",
+                    "value": {
+                        "value": "@array(json(concat('{\n\"PipelineRunId\": \"', pipeline().RunId ,'\"'\n,',\"PipelineStartDate\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyyMMdd'), '\"'\n,',\"PipelineStartDateTime\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyy-MM-dd HH:mm:ss'), '\"'\n,'}')))",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Create Log Tables If Not Exists",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = 'logging')\n    EXEC ('CREATE SCHEMA [logging]')\n;\n\nIF OBJECT_ID('logging.ServerlessDDL', 'U') IS NOT NULL\n    DROP TABLE logging.ServerlessDDL\n;\n\nCREATE TABLE logging.ServerlessDDL\n(\n\tId INT IDENTITY(1,1) NOT NULL\n\t,PipelineRunId VARCHAR(50) NOT NULL\n    ,PipelineName VARCHAR(100) NOT NULL\n\t,PipelineStartDate INT NOT NULL\n\t,PipelineStartDateTime DATETIME2(0) NOT NULL\n    ,StorageAccountNameMetadata NVARCHAR(1000) NULL\n\t,FolderPathFull NVARCHAR(4000) NOT NULL\n\t,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,SqlCommandCreateExternalTable NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCreateExternalTableStats NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCreateView NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCreateViewStats NVARCHAR(MAX) NOT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH (DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(PipelineStartDate, Id)\n)\n;\nSELECT 1 AS a",
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": {
+                                "value": "@variables('DatabaseName')",
+                                "type": "Expression"
+                            }
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            }
+        ],
+        "parameters": {
+            "StorageAccountNameMetadata": {
+                "type": "string",
+                "defaultValue": "https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/curated/metadata-table-AdventureWorksDW-Trimmed-Minimal.csv"
+            }
+        },
+        "variables": {
+            "PipelineValues": {
+                "type": "Array"
+            },
+            "SqlScript": {
+                "type": "String",
+                "defaultValue": "IF OBJECT_ID('tempdb..#tables') IS NOT NULL     DROP TABLE #tables;  CREATE TABLE #tables (     SchemaName NVARCHAR(100)     , TableName NVARCHAR(100)     , FolderPath NVARCHAR(1000)     );  INSERT INTO #tables VALUES (     '{SchemaNameStaging}'     , '{TableNameStaging}'     , '{FolderPathFull}'     );  IF OBJECT_ID('tempdb..#CreateViewsDDL') IS NOT NULL     DROP TABLE #CreateViewsDDL;  CREATE TABLE #CreateViewsDDL (     SchemaName NVARCHAR(100)     , ViewName NVARCHAR(100)     , ViewDDL NVARCHAR(MAX)     );  DECLARE @cnt INT = 1 DECLARE @sqlCreateView NVARCHAR(MAX) DECLARE @SchemaName NVARCHAR(100) DECLARE @TableName NVARCHAR(100) DECLARE @FolderPath NVARCHAR(1000);  SELECT @SchemaName = SchemaName     , @TableName = TableName     , @FolderPath = FolderPath     , @sqlCreateView = CONCAT (         'sp_describe_first_result_set @tsql=N''SELECT * FROM OPENROWSET(BULK '''''         , FolderPath         , ''''' , FORMAT=''''PARQUET'''') AS r'''         ) FROM #tables;  IF OBJECT_ID('tempdb..#InformationSchemaTempTable', 'U') IS NOT NULL     DROP TABLE #InformationSchemaTempTable;  CREATE TABLE #InformationSchemaTempTable (     is_hidden BIT NOT NULL     , column_ordinal INT NOT NULL     , name SYSNAME NULL     , is_nullable BIT NOT NULL     , system_type_id INT NOT NULL     , system_type_name NVARCHAR(256) NULL     , max_length SMALLINT NOT NULL     , precision TINYINT NOT NULL     , scale TINYINT NOT NULL     , collation_name SYSNAME NULL     , user_type_id INT NULL     , user_type_database SYSNAME NULL     , user_type_schema SYSNAME NULL     , user_type_name SYSNAME NULL     , assembly_qualified_type_name NVARCHAR(4000)     , xml_collection_id INT NULL     , xml_collection_database SYSNAME NULL     , xml_collection_schema SYSNAME NULL     , xml_collection_name SYSNAME NULL     , is_xml_document BIT NOT NULL     , is_case_sensitive BIT NOT NULL     , is_fixed_length_clr_type BIT NOT NULL     , source_server SYSNAME NULL     , source_database SYSNAME NULL     , source_schema SYSNAME NULL     , source_table SYSNAME NULL     , source_column SYSNAME NULL     , is_identity_column BIT NULL     , is_part_of_unique_key BIT NULL     , is_updateable BIT NULL     , is_computed_column BIT NULL     , is_sparse_column_set BIT NULL     , ordinal_in_order_by_list SMALLINT NULL     , order_by_list_length SMALLINT NULL     , order_by_is_descending SMALLINT NULL     , tds_type_id INT NOT NULL     , tds_length INT NOT NULL     , tds_collation_id INT NULL     , tds_collation_sort_id TINYINT NULL     );  INSERT INTO #InformationSchemaTempTable EXEC (@sqlCreateView) /*SELECT * FROM #InformationSchemaTempTable*/  DECLARE @GetMaxValueStatement NVARCHAR(MAX) DECLARE @GetColumnList NVARCHAR(MAX)  SELECT @GetMaxValueStatement = CONVERT(NVARCHAR(MAX), CONCAT (             'SELECT '             , STRING_AGG(ColumnMaxLength, ',')             , ' FROM OPENROWSET(BULK '''             , @FolderPath             , ''' , FORMAT=''PARQUET'') WITH ('             , STRING_AGG(CONVERT(NVARCHAR(MAX), ColumnDatatypeWithMax), ',')             , ') AS r'             ))     , @GetColumnList = STRING_AGG(QUOTENAME([name]), ',') FROM (     SELECT CASE              WHEN system_type_name LIKE ('%char%')                 OR system_type_name = 'varbinary(8000)'                 THEN CONCAT (                         'CONVERT(BIGINT, COALESCE(NULLIF(MAX(DATALENGTH('                         , QUOTENAME([name])                         , ')), 0), 1)) AS '                         , QUOTENAME([name])                         )             ELSE CONCAT (                     'COALESCE(CONVERT(BIGINT, SUM(0)), 0) AS '                     , QUOTENAME([name])                     )             END AS ColumnMaxLength         , CASE              WHEN system_type_name LIKE ('%char%')                 THEN CONCAT (                         QUOTENAME([name])                         , ' '                         , REPLACE(system_type_name, '8000', 'MAX')                         , ' COLLATE Latin1_General_100_BIN2_UTF8'                         )             WHEN system_type_name = 'varbinary(8000)'                 THEN CONCAT (                         QUOTENAME([name])                         , ' '                         , REPLACE(system_type_name, '8000', 'MAX')                         )             ELSE CONCAT (                     QUOTENAME([name])                     , ' '                     , system_type_name                     )             END AS ColumnDatatypeWithMax         , [name]     FROM #InformationSchemaTempTable     ) AS a /*SELECT @GetMaxValueStatement*/ /*SELECT @GetColumnList*/  DECLARE @sqlUnpivot NVARCHAR(MAX)  SET @sqlUnpivot = CONCAT (         'SELECT '''         , @TableName         , ''' AS TABLE_NAME, unpvt.col AS COLUMN_NAME, CASE WHEN unpvt.datatype > 8000 THEN ''MAX'' ELSE CONVERT(NVARCHAR(100), unpvt.datatype) END AS DATATYPE_MAX FROM  ( '         , @GetMaxValueStatement         , ' ) AS a '         , CHAR(13)         , ' UNPIVOT ( datatype FOR col IN  ( '         , @GetColumnList         , ') ) AS unpvt'         )  DROP TABLE  IF EXISTS #tmpBus;     CREATE TABLE #tmpBus (         TABLE_CLEAN NVARCHAR(1000)         , COLUMN_NAME NVARCHAR(1000)         , DATATYPE_MAX NVARCHAR(1000)         );  INSERT INTO #tmpBus EXEC (@sqlUnpivot)  DROP TABLE  IF EXISTS #tmpFinal;     CREATE TABLE #tmpFinal (         table_name NVARCHAR(1000)         , column_name NVARCHAR(1000)         , DataType NVARCHAR(1000)         , ColumnFullDefinition NVARCHAR(1000)         );  INSERT INTO #tmpFinal SELECT @TableName AS table_name     , c.[name] AS column_name     , UPPER(TYPE_NAME(c.system_type_id)) AS DataType     , CONCAT (         c.[name]         , ' '         , CASE              WHEN TYPE_NAME(c.system_type_id) IN ('int', 'bigint', 'smallint', 'tinyint', 'bit', 'decimal', 'numeric', 'float', 'real', 'datetime2', 'date')                 THEN UPPER(c.system_type_name)             ELSE CONCAT (                     UPPER(TYPE_NAME(c.system_type_id))                     , '('                     , a.DATATYPE_MAX                     , ') COLLATE Latin1_General_100_BIN2_UTF8'                     )             END         ) AS ColumnFullDefinition FROM #InformationSchemaTempTable AS c JOIN #tmpBus AS a     ON a.COLUMN_NAME = c.[name] ORDER BY column_ordinal OFFSET 0 ROWS;  DECLARE @createTableDDL NVARCHAR(MAX) DECLARE @createTableStatsDDL NVARCHAR(MAX) DECLARE @createViewDDL NVARCHAR(MAX) DECLARE @createViewStatsDDL NVARCHAR(MAX) DECLARE @openrowsetValue NVARCHAR(MAX) DECLARE @DataSourceName NVARCHAR(MAX) = (         SELECT CONCAT (                 'ds_'                 , SUBSTRING(FolderPath, CHARINDEX('//', FolderPath) + 2, (CHARINDEX('.', FolderPath) - 9))                 )         FROM #tables         ) DECLARE @DataSourceDefinition NVARCHAR(MAX) = (         SELECT SUBSTRING(FolderPath, 0, CHARINDEX('/', REPLACE(FolderPath, '//', '')) + 2)         FROM #tables         ) DECLARE @DataSourcePath NVARCHAR(MAX) = (         SELECT SUBSTRING(FolderPath, CHARINDEX('/', REPLACE(FolderPath, '//', '')) + 2, LEN(FolderPath))         FROM #tables         ) DECLARE @DataSourceCreateDDL NVARCHAR(MAX) = (         SELECT CONCAT (                 'IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = '''                 , @DataSourceName                 , ''') CREATE EXTERNAL DATA SOURCE ['                 , @DataSourceName                 , '] WITH (LOCATION   = '''                 , @DataSourceDefinition                 , ''')'                 , ''                 )         ) DECLARE @FileFormatCreateDDL NVARCHAR(MAX) = 'IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = ''SynapseParquetFormat'') CREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] WITH ( FORMAT_TYPE = PARQUET)' DECLARE @CreateSchema NVARCHAR(MAX) = (         SELECT CONCAT (                 'IF NOT EXISTS(SELECT 1 FROM sys.schemas WHERE [name] = '''                 , @SchemaName                 , ''') EXEC(''CREATE SCHEMA '                 , QUOTENAME(@SchemaName)                 , ''');'                 )         )  SELECT @createTableDDL = CONCAT (         'CREATE EXTERNAL TABLE '         , QUOTENAME(@SchemaName)         , '.'         , QUOTENAME(@TableName)         , ' ('         , STRING_AGG(ColumnFullDefinition, ',')         , ') WITH ( LOCATION = '''         , @DataSourcePath         , ''', DATA_SOURCE = ['         , @DataSourceName         , '], FILE_FORMAT = [SynapseParquetFormat])'         )     , @createTableStatsDDL = STRING_AGG(CONCAT (             'CREATE STATISTICS stat_'             , column_name             , ' ON '             , QUOTENAME(@Schemaname)             , '.'             , QUOTENAME(@TableName)             , ' ('             , QUOTENAME(column_name)             , ') WITH FULLSCAN, NORECOMPUTE'             ), ';')     , @createViewDDL = CONCAT (         'CREATE VIEW '         , QUOTENAME(@SchemaName)         , '.[vw'         , @TableName         , '] AS SELECT * FROM OPENROWSET(BULK '''         , @FolderPath         , ''' , FORMAT=''PARQUET'') WITH ('         , STRING_AGG(ColumnFullDefinition, ',')         , ') AS r'         )     , @openrowsetValue = CONCAT (         'FROM OPENROWSET(BULK '''''         , @FolderPath         , ''''', FORMAT=''''PARQUET'''') WITH ('         , STRING_AGG(CONVERT(NVARCHAR(MAX), ColumnFullDefinition), ',')         ) FROM #tmpFinal;  SELECT @createViewStatsDDL = STRING_AGG(CONCAT (             'EXEC sys.sp_create_openrowset_statistics N''SELECT '             , column_name             , ' '             , @openrowsetValue             , ') AS r'''             ), ';') FROM #tmpFinal;  SELECT @SchemaName AS SchemaName     , @TableName AS TableName     , CONCAT (         @FileFormatCreateDDL         , ';'         , @DataSourceCreateDDL         , ';'         , @CreateSchema         , ' IF EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.tables WHERE TABLE_SCHEMA = '''         , @SchemaName         , ''' AND TABLE_NAME = '''         , @TableName         , ''') DROP EXTERNAL TABLE '         , @SchemaName         , '.'         , @TableName         , '; '         , @createTableDDL         , ';'         ) AS CreateTableDDL     , @createTableStatsDDL AS CreateTableStatsDDL     , CONCAT (         @CreateSchema         , ' IF OBJECT_ID('''         , @SchemaName         , '.vw'         , @TableName         , ''', ''V'') IS NOT NULL DROP VIEW '         , @SchemaName         , '.vw'         , @TableName         , '; EXEC('''         , REPLACE(@createViewDDL, '''', '''''')         , ''');'         ) AS CreateViewDDL     , @createViewStatsDDL AS CreateViewStatsDDL;"
+            },
+            "DatabaseName": {
+                "type": "String",
+                "defaultValue": "DataWarehouse"
+            },
+            "LakeDatabaseName": {
+                "type": "String",
+                "defaultValue": "Demo Data (Serverless)"
+            }
+        },
+        "annotations": []
+    }
+}

@@ -203,8 +203,16 @@ azcopy cp 'artifacts/Parquet_Auto_Ingestion_Metadata.csv' 'https://'"${datalakeN
 sampleDataStorageSAS="?sv=2020-10-02&st=2021-11-23T05%3A00%3A00Z&se=2022-11-24T05%3A00%3A00Z&sr=c&sp=rl&sig=PMi22pEYzw1dHNrOI9gqrwcbi3AJLq%2BxWoSX9SOTLuw%3D"
 azcopy cp 'https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/'"${sampleDataStorageSAS}" 'https://'"${datalakeName}"'.blob.core.windows.net/data/Sample?'"${destinationStorageSAS}" --recursive >> deploySynapse.log 2>&1
 
-# Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
+# Create the Auto Ingestion Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json >> deploySynapse.log 2>&1
+
+# Copy the Lake Database Auto DDL Pipeline template and update the variables
+cp artifacts/Lake_Database_Auto_DDL.json.tmpl artifacts/Lake_Database_Auto_DDL.json 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Lake_Database_Auto_DDL.json
+
+# Create the Lake Database Auto DDL Pipeline in the Synapse Analytics Workspace
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Lake Database Auto DDL" --file @artifacts/Lake_Database_Auto_DDL.json >> deploySynapse.log 2>&1
+
 
 echo "Creating the Demo Data database using Synapse Serverless SQL..." | tee -a deploySynapse.log
 

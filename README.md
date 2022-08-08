@@ -71,6 +71,7 @@ bash deploySynapse.sh
 - Serverless SQL Demo Data Database
 - Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
+- Lake Database Auto DDL creation (views) for all files used by Ingestion pipeline
 
 # Other Files
 - You can find a Synapse_Dedicated_SQL_Pool_Test_Plan.jmx JMeter file under the artifacts folder that is configured to work with your recently deployed Synapse Environment.  
