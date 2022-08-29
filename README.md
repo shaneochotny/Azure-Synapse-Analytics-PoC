@@ -15,7 +15,7 @@ depandancies than what can be configured here.
 ### "Easy Button" Deployment
 The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
 ```bash
-git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
+git clone https://github.com/Tonio-Lora-Organization/Azure-Synapse-Analytics-PoC
 cd Azure-Synapse-Analytics-PoC
 bash deploySynapse.sh 
 ```
