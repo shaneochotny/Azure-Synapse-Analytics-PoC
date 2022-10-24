@@ -199,9 +199,12 @@ destinationStorageSAS=$(az storage container generate-sas --account-name ${datal
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Parquet_Auto_Ingestion_Metadata.csv
 azcopy cp 'artifacts/Parquet_Auto_Ingestion_Metadata.csv' 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> deploySynapse.log 2>&1
 
+# Source Sample Data Storage Account
+sampleDataStorageAccount="synapseacceleratorsdata"
+sampleDataStorageSAS="?sv=2021-04-10&st=2022-10-01T04%3A00%3A00Z&se=2023-12-01T05%3A00%3A00Z&sr=c&sp=rl&sig=eorb8V3hDel5dR4%2Ft2JsWVwTBawsxIOUYADj4RiKeDo%3D"
+
 # Copy sample data for the Parquet Auto Ingestion pipeline
-sampleDataStorageSAS="?sv=2020-10-02&st=2021-11-23T05%3A00%3A00Z&se=2022-11-24T05%3A00%3A00Z&sr=c&sp=rl&sig=PMi22pEYzw1dHNrOI9gqrwcbi3AJLq%2BxWoSX9SOTLuw%3D"
-azcopy cp 'https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/'"${sampleDataStorageSAS}" 'https://'"${datalakeName}"'.blob.core.windows.net/data/Sample?'"${destinationStorageSAS}" --recursive >> deploySynapse.log 2>&1
+azcopy cp "https://${sampleDataStorageAccount}.blob.core.windows.net/sample/AdventureWorks/${sampleDataStorageSAS}" "https://${datalakeName}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive >> deploySynapse.log 2>&1
 
 # Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json >> deploySynapse.log 2>&1
