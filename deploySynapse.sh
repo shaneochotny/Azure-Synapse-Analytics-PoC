@@ -206,8 +206,16 @@ sampleDataStorageSAS="?sv=2021-04-10&st=2022-10-01T04%3A00%3A00Z&se=2023-12-01T0
 # Copy sample data for the Parquet Auto Ingestion pipeline
 azcopy cp "https://${sampleDataStorageAccount}.blob.core.windows.net/sample/AdventureWorks/${sampleDataStorageSAS}" "https://${datalakeName}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive >> deploySynapse.log 2>&1
 
-# Create the Auto_Pause_and_Resume Pipeline in the Synapse Analytics Workspace
+# Create the Auto Ingestion Pipeline in the Synapse Analytics Workspace
 az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Ingestion" --file @artifacts/Parquet_Auto_Ingestion.json >> deploySynapse.log 2>&1
+
+# Copy the Lake Database Auto DDL Pipeline template and update the variables
+cp artifacts/Lake_Database_Auto_DDL.json.tmpl artifacts/Lake_Database_Auto_DDL.json 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/Lake_Database_Auto_DDL.json
+
+# Create the Lake Database Auto DDL Pipeline in the Synapse Analytics Workspace
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Lake Database Auto DDL" --file @artifacts/Lake_Database_Auto_DDL.json >> deploySynapse.log 2>&1
+
 
 echo "Creating the Demo Data database using Synapse Serverless SQL..." | tee -a deploySynapse.log
 
@@ -216,6 +224,32 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S 
 
 # Create the Views over the external data
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}-ondemand.sql.azuresynapse.net -d "Demo Data (Serverless)" -I -i artifacts/Demo_Data_Serverless_DDL.sql
+
+# Create Sample SQL Scripts
+echo "Creating Sample SQL Scripts ..." | tee -a deploySynapse.log
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/row_level_security.sql --name "01 Row Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/column_level_security.sql --name "02 Column Level Security" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_security/dynamic_data_masking.sql --name "03 Dynamic Data Masking" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Security" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/materialized_views.sql --name "01 Materialized View Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+azcopy cp 'artifacts/dedicated_sql_pool_features/user_data.json.gz' 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> deploySynapse.log 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/dedicated_sql_pool_features/parsing_json.sql
+az synapse sql-script create --file ./artifacts/dedicated_sql_pool_features/parsing_json.sql --name "02 JSON Parsing Example" --workspace-name ${synapseAnalyticsWorkspaceName} --folder-name "Dedicated SQL Pool Features" --sql-pool-name ${synapseAnalyticsSQLPoolName} --sql-database-name ${synapseAnalyticsSQLPoolName}  >> deploySynapse.log 2>&1
+
+# Update Synapse Dedicated SQL Pool JMeter Test Plan file
+echo "Updating JMeter Test plan ..." | tee -a deploySynapse.log
+sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_WORKSPACE_NAME/${synapseAnalyticsWorkspaceName}/g" artifacts/Synapse_Dedicated_SQL_Pool_Test_Plan.jmx
+
+# Create Spark Pool -- Could be moved to a Terraform and Bicep scripts
+echo "Creating Spark Pool ..." | tee -a deploySynapse.log
+az synapse spark pool create --name SparkPool --workspace-name ${synapseAnalyticsWorkspaceName} --resource-group ${resourceGroup} --spark-version 3.2 --node-count 6 --node-size Medium >> deploySynapse.log 2>&1
+
+# Create Sample Spark Notebooks
+echo "Creating Sample Spark Notebooks ..." | tee -a deploySynapse.log
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/spark_pool_features/shared_metastore_tables.ipynb
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "01. Shared Metastore" --file @"artifacts/spark_pool_features/shared_metastore_tables.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" artifacts/spark_pool_features/delta_tables_process.ipynb
+az synapse notebook import --workspace-name ${synapseAnalyticsWorkspaceName} --name "02. Delta Lake Tables" --file @"artifacts/spark_pool_features/delta_tables_process.ipynb" --folder-path "Spark Pool Features" --spark-pool-name "SparkPool" >> deploySynapse.log 2>&1
 
 # Restore the firewall rules on ADLS an Azure Synapse Analytics. That was needed temporarily to apply these settings.
 if [ "$privateEndpointsEnabled" == "true" ]; then
