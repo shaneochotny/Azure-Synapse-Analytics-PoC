@@ -14,38 +14,47 @@ depandancies than what can be configured here.
 
 ### "Easy Button" Deployment
 The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/Tonio-Lora-Organization/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+bash deploySynapse.sh 
 ```
 
 ### Advanced Deployment: Bicep
 You can manually configure the Bicep parameters and update default settings such as the Azure region, database name, credentials, and private endpoint integration. The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ code Bicep/main.parameters.json
-@Azure:~$ az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location eastus
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/Tonio-Lora-Organization/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+code Bicep/main.parameters.json
+az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Analytics-PoC --location eastus
+bash deploySynapse.sh 
 ```
 
 ### Advanced Deployment: Terraform
 You can manually configure the Terraform parameters and update default settings such as the Azure region, database name, credentials, and private endpoint integration. The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/shaneochotny/Azure-Synapse-Analytics-PoC
-@Azure:~$ cd Azure-Synapse-Analytics-PoC
-@Azure:~$ code Terraform/terraform.tfvars
-@Azure:~$ terraform -chdir=Terraform init
-@Azure:~$ terraform -chdir=Terraform plan
-@Azure:~$ terraform -chdir=Terraform apply
-@Azure:~$ bash deploySynapse.sh 
+```bash
+git clone https://github.com/Tonio-Lora-Organization/Azure-Synapse-Analytics-PoC
+cd Azure-Synapse-Analytics-PoC
+code Terraform/terraform.tfvars
+terraform -chdir=Terraform init
+terraform -chdir=Terraform plan
+terraform -chdir=Terraform apply
+bash deploySynapse.sh 
 ```
 
 # What's Deployed
 
 ### Azure Synapse Analytics Workspace
 - DW1000 Dedicated SQL Pool
+- Example scripts for configuring and using:
+    - Row Level Security
+    - Column Level Security
+    - Dynamic Data Masking
+    - Materialized Views
+    - JSON data parsing
+- Example notebooks for testing:
+    - Spark and Serverless Metastore integration
+    - Spark Delta Lake integration
 
 ### Azure Data Lake Storage Gen2
 - <b>config</b> container for Azure Synapse Analytics Workspace
@@ -62,7 +71,13 @@ You can manually configure the Terraform parameters and update default settings 
 - Serverless SQL Demo Data Database
 - Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
+- Lake Database Auto DDL creation (views) for all files used by Ingestion pipeline
+
+# Other Files
+- You can find a Synapse_Dedicated_SQL_Pool_Test_Plan.jmx JMeter file under the artifacts folder that is configured to work with your recently deployed Synapse Environment.  
 
 # To Do
-- Example script for configuring Row Level Security
-- Example script for configuring Dynamic Data Masking
+- Synapse Data Explorer Pool deployment
+- Purview Deployment and Configuration
+- Azure ML Services Deployment and Configuration
+- Cognitive Services Deployment and Configuration
